@@ -10,3 +10,14 @@ export interface VocabularyWord {
   definition: string;
   example: string;
 }
+
+export interface DailyGoal {
+  type: 'words' | 'quizzes';
+  value: number;
+}
+
+export interface DailyProgress {
+  date: string; // YYYY-MM-DD
+  wordsLearnedCount: number;
+  quizzesCompletedCount: number;
+}

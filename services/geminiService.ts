@@ -1,11 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
+
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { VocabularyWord } from '../types';
 
-if (!process.env.API_KEY) {
-    console.warn("API_KEY environment variable not set. Using a placeholder key.");
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'placeholder-api-key' });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const vocabularySchema = {
   type: Type.ARRAY,
@@ -53,5 +50,58 @@ export const getVocabularyForCategory = async (category: string): Promise<Vocabu
   } catch (error) {
     console.error('Error fetching vocabulary from Gemini API:', error);
     throw new Error('Failed to fetch vocabulary. Please check your API key and try again.');
+  }
+};
+
+export const generateSpeech = async (text: string): Promise<string | null> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Kore' },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (base64Audio) {
+      return base64Audio;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error generating speech from Gemini API:', error);
+    return null;
+  }
+};
+
+export const generateImageForWord = async (word: string): Promise<string | null> => {
+  try {
+    const prompt = `A simple, clear, visually appealing illustration representing the concept of: "${word}". Style: minimalist, educational, vector art.`;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: prompt }],
+      },
+      config: {
+        responseModalities: [Modality.IMAGE],
+      },
+    });
+
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        return part.inlineData.data;
+      }
+    }
+    return null;
+
+  } catch (error) {
+    console.error('Error generating image from Gemini API:', error);
+    return null;
   }
 };

@@ -1,5 +1,7 @@
+
 import React from 'react';
 import { CloseIcon, SunIcon, MoonIcon, BellIcon, YouTubeIcon, FacebookIcon } from './icons';
+import { DailyGoal } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -8,9 +10,22 @@ interface SidebarProps {
   onThemeToggle: () => void;
   notificationsEnabled: boolean;
   onNotificationsToggle: () => void;
+  dailyGoal: DailyGoal;
+  onGoalChange: (newGoal: DailyGoal) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, theme, onThemeToggle, notificationsEnabled, onNotificationsToggle }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  isOpen, 
+  onClose, 
+  theme, 
+  onThemeToggle, 
+  notificationsEnabled, 
+  onNotificationsToggle,
+  dailyGoal,
+  onGoalChange,
+}) => {
+  const goalOptions = [5, 10, 15, 20, 30, 50];
+
   return (
     <>
       <div
@@ -25,6 +40,37 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, theme, onThemeToggle
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
             <CloseIcon className="h-6 w-6" />
           </button>
+        </div>
+        
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Daily Goal</h3>
+          <div className="space-y-2">
+            <div>
+              <label htmlFor="goalType" className="text-sm font-medium text-gray-700 dark:text-gray-300">Goal Type</label>
+              <select 
+                id="goalType"
+                value={dailyGoal.type}
+                onChange={(e) => onGoalChange({ ...dailyGoal, type: e.target.value as 'words' | 'quizzes' })}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
+              >
+                <option value="words">Learn New Words</option>
+                <option value="quizzes">Complete Quizzes</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="goalValue" className="text-sm font-medium text-gray-700 dark:text-gray-300">Target</label>
+              <select 
+                id="goalValue"
+                value={dailyGoal.value}
+                onChange={(e) => onGoalChange({ ...dailyGoal, value: parseInt(e.target.value, 10) })}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
+              >
+                {goalOptions.map(option => (
+                  <option key={option} value={option}>{option} {dailyGoal.type === 'words' ? 'Words' : 'Quizzes'}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
@@ -97,7 +143,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, theme, onThemeToggle
             </li>
           </ul>
         </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
           <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">About</h3>
           <div className="space-y-3">
             <p className="text-sm text-center text-gray-500 dark:text-gray-400">

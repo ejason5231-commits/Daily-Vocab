@@ -2,9 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { VocabularyWord } from '../types';
 import { RefreshIcon } from './icons';
 
+interface QuizCompletionResult {
+  correctlyAnsweredWords: string[];
+  score: number;
+  totalQuestions: number;
+}
+
 interface QuizViewProps {
   words: VocabularyWord[];
-  onQuizComplete: (correctlyAnsweredWords: string[]) => void;
+  onQuizComplete: (result: QuizCompletionResult) => void;
   onQuizExit: () => void;
   title: string;
 }
@@ -112,7 +118,11 @@ const QuizView: React.FC<QuizViewProps> = ({ words, onQuizComplete, onQuizExit, 
             <span>Try Again</span>
           </button>
           <button
-            onClick={() => onQuizComplete(Array.from(correctlyAnsweredInSession))}
+            onClick={() => onQuizComplete({
+              correctlyAnsweredWords: Array.from(correctlyAnsweredInSession),
+              score: score,
+              totalQuestions: questions.length,
+            })}
             className="px-6 py-2 bg-primary-500 text-white rounded-lg shadow hover:bg-primary-600 transition-colors"
           >
             Back to Dashboard
