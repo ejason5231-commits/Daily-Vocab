@@ -123,6 +123,12 @@ export const PlayIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+export const ProfileIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+);
+
 export const TrophyIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M11.22 3.117A.75.75 0 0010 2.5h-.002a.75.75 0 00-.718.617L8.36 9.383a.75.75 0 01-.582.582l-6.266.92A.75.75 0 001 11.633v.002a.75.75 0 00.75.75H7.5a.75.75 0 01.75.75v5.75a.75.75 0 00.75.75h2.5a.75.75 0 00.75-.75V13.13a.75.75 0 01.75-.75h5.75a.75.75 0 00.75-.75v-.002a.75.75 0 00-.748-.748l-6.266-.92a.75.75 0 01-.582-.582L11.22 3.117z" clipRule="evenodd" />

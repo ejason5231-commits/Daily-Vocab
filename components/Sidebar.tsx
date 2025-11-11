@@ -1,5 +1,5 @@
 import React from 'react';
-import { CloseIcon, SunIcon, MoonIcon, BellIcon, YouTubeIcon, FacebookIcon, HistoryIcon, TrophyIcon, LeaderboardIcon, PuzzleIcon } from './icons';
+import { CloseIcon, SunIcon, MoonIcon, BellIcon, YouTubeIcon, FacebookIcon, HistoryIcon, ProfileIcon, LeaderboardIcon, PuzzleIcon } from './icons';
 import { DailyGoal } from '../types';
 
 interface SidebarProps {
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ul>
               <li className="mb-2">
                 <button onClick={onShowProfile} className="w-full flex items-center text-left p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <TrophyIcon className="h-5 w-5 mr-3" />
+                  <ProfileIcon className="h-5 w-5 mr-3" />
                   <span>My Profile</span>
                 </button>
               </li>
