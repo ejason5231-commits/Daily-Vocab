@@ -1,10 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
-import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, ImageIcon } from './icons';
+import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, MicrophoneIcon, StopIcon, PlayIcon } from './icons';
 import { playAudio } from '../services/audioService';
-import { getImage, saveImage } from '../services/dbService';
-import { generateImageForWord } from '../services/geminiService';
 
 interface FlashcardProps {
   wordData: VocabularyWord;
@@ -14,41 +12,40 @@ interface FlashcardProps {
 
 const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLearned }) => {
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
-  const wordText = wordData.word.split('(')[0].trim();
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [userAudioURL, setUserAudioURL] = useState<string | null>(null);
+  const [supportedMimeType, setSupportedMimeType] = useState<string>('');
 
   useEffect(() => {
-    // Reset state for new word
-    setImageUrl(null);
-    setIsGeneratingImage(false);
+    // Determine a supported MIME type once on component mount.
+    const mimeTypes = [
+      'audio/mp4',
+      'audio/webm;codecs=opus',
+      'audio/ogg;codecs=opus',
+      'audio/webm',
+    ];
+    const foundType = mimeTypes.find(type => {
+      try {
+        return MediaRecorder.isTypeSupported(type);
+      } catch (e) {
+        return false;
+      }
+    });
+    setSupportedMimeType(foundType || '');
+  }, []);
 
-    const loadImageAndGenerateIfNeeded = async () => {
-        const cachedImage = await getImage(wordText);
-        if (cachedImage) {
-            setImageUrl(`data:image/png;base64,${cachedImage}`);
-        } else if (navigator.onLine) {
-            setIsGeneratingImage(true);
-            try {
-                const base64Image = await generateImageForWord(wordText);
-                if (base64Image) {
-                    await saveImage(wordText, base64Image);
-                    setImageUrl(`data:image/png;base64,${base64Image}`);
-                } else {
-                    console.error("Image generation returned no data for word:", wordText);
-                }
-            } catch (error) {
-                console.error("Error auto-generating image:", error);
-            } finally {
-                setIsGeneratingImage(false);
-            }
-        }
+  useEffect(() => {
+    // Cleanup function to revoke the object URL and prevent memory leaks
+    return () => {
+      if (userAudioURL) {
+        URL.revokeObjectURL(userAudioURL);
+      }
     };
+  }, [userAudioURL]);
 
-    loadImageAndGenerateIfNeeded();
-  }, [wordText]);
-
+  const wordText = wordData.word.split('(')[0].trim();
 
   const handlePlaySound = async (e: React.MouseEvent, textToSpeak: string) => {
     e.stopPropagation();
@@ -68,27 +65,55 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
     e.stopPropagation();
     onToggleLearned(wordData.word);
   };
-  
+
+  const handleStartRecording = async () => {
+    if (userAudioURL) {
+      URL.revokeObjectURL(userAudioURL);
+      setUserAudioURL(null);
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const options = supportedMimeType ? { mimeType: supportedMimeType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: supportedMimeType });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setUserAudioURL(audioUrl);
+        stream.getTracks().forEach(track => track.stop()); // Release microphone
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("Microphone access is required for this feature. Please enable it in your browser settings.");
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handlePlayUserAudio = () => {
+    if (userAudioURL) {
+      const audio = new Audio(userAudioURL);
+      audio.play().catch(e => console.error("Error playing user audio:", e));
+    }
+  };
+
   return (
     <div className={`relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col ${isLearned ? 'ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20' : ''}`}>
-      <div className="relative w-full h-40 bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-        {isGeneratingImage ? (
-          <div className="flex items-center justify-center h-full">
-            <SpinnerIcon className="h-8 w-8 text-primary-500" />
-          </div>
-        ) : imageUrl ? (
-          <img src={imageUrl} alt={wordText} className="w-full h-full object-cover" />
-        ) : (
-          <div 
-            className="w-full h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400"
-            aria-label={`Image for ${wordText} is not available offline`}
-          >
-            <ImageIcon className="h-10 w-10 mb-2" />
-            <span className="text-sm text-center px-2 font-semibold">Image unavailable offline</span>
-          </div>
-        )}
-      </div>
-      
       <button
         onClick={handleToggleLearned}
         className={`absolute top-2 right-2 p-1 rounded-full transition-colors duration-200 z-10 ${isLearned ? 'text-green-500 bg-white/70' : 'text-gray-400 hover:text-green-500 bg-white/70'}`}
@@ -96,20 +121,20 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
       >
         {isLearned ? <CheckCircleIconSolid className="h-7 w-7" /> : <CheckCircleIcon className="h-7 w-7" />}
       </button>
-      
+
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex items-center mb-2">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize">{wordData.word}</h3>
-            <button
-              onClick={(e) => handlePlaySound(e, wordText)}
-              className="ml-2 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500"
-              aria-label={`Pronounce ${wordData.word}`}
-              disabled={!!isSpeaking}
-            >
-              {isSpeaking === wordText ? <SpinnerIcon className="h-6 w-6" /> : <SpeakerIcon className="h-6 w-6" />}
-            </button>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white capitalize">{wordData.word}</h3>
+          <button
+            onClick={(e) => handlePlaySound(e, wordText)}
+            className="ml-2 p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500"
+            aria-label={`Pronounce ${wordData.word}`}
+            disabled={!!isSpeaking}
+          >
+            {isSpeaking === wordText ? <SpinnerIcon className="h-6 w-6" /> : <SpeakerIcon className="h-6 w-6" />}
+          </button>
         </div>
-        
+
         <p className="text-gray-600 dark:text-gray-300 mt-2">{wordData.definition}</p>
 
         <div className="flex items-start text-gray-500 dark:text-gray-400 mt-2">
@@ -122,6 +147,37 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
           >
             {isSpeaking === wordData.example ? <SpinnerIcon className="h-5 w-5" /> : <SpeakerIcon className="h-5 w-5" />}
           </button>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Practice Pronunciation</h4>
+          <div className="flex items-center space-x-2">
+            {!isRecording ? (
+              <button
+                onClick={handleStartRecording}
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500"
+                aria-label="Start recording"
+              >
+                <MicrophoneIcon className="h-6 w-6" />
+              </button>
+            ) : (
+              <button
+                onClick={handleStopRecording}
+                className="p-2 rounded-full text-red-500 bg-red-100 dark:bg-red-900/50 animate-pulse"
+                aria-label="Stop recording"
+              >
+                <StopIcon className="h-6 w-6" />
+              </button>
+            )}
+            <button
+              onClick={handlePlayUserAudio}
+              disabled={!userAudioURL || isRecording}
+              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Play your recording"
+            >
+              <PlayIcon className="h-6 w-6" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

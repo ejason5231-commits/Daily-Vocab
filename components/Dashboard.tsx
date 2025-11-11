@@ -1,8 +1,8 @@
 import React from 'react';
 import { Category, VocabularyWord, DailyGoal, DailyProgress } from '../types';
 import { CATEGORIES } from '../constants';
-import { QuizIcon } from './icons';
-import DailyGoalTracker from './DailyGoalTracker';
+import UserStats from './UserStats';
+import QuizProgress from './QuizProgress';
 
 interface DashboardProps {
   onSelectCategory: (category: Category) => void;
@@ -13,6 +13,8 @@ interface DashboardProps {
   totalWords: number;
   dailyGoal: DailyGoal;
   dailyProgress: DailyProgress;
+  userName: string;
+  userPoints: number;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -24,6 +26,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   totalWords,
   dailyGoal,
   dailyProgress,
+  userName,
+  userPoints,
 }) => {
   const getCategoryProgress = (categoryName: string) => {
     const wordsInCategory = wordCache[categoryName] || [];
@@ -34,8 +38,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     return { learnedCount, totalCount: wordsInCategory.length };
   };
 
-  const masteryProgress = totalWords > 0 ? (masteredWords.size / totalWords) * 100 : 0;
-
   return (
     <div className="p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -43,24 +45,19 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <DailyGoalTracker goal={dailyGoal} progress={dailyProgress} />
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
-            <h3 className="font-bold text-lg text-gray-800 dark:text-white mb-3">Overall Mastery</h3>
-            <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                <span>Progress</span>
-                <span className="font-semibold">{masteredWords.size} / {totalWords} Words</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                <div className="bg-purple-600 h-3 rounded-full transition-all duration-500" style={{ width: `${masteryProgress}%` }}></div>
-            </div>
-            <button
-              onClick={onStartQuiz}
-              className="w-full mt-4 flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none transition-all duration-300"
-            >
-              <QuizIcon className="h-5 w-5" />
-              <span>Master Quiz (All Words)</span>
-            </button>
-        </div>
+        <UserStats 
+          userName={userName}
+          userPoints={userPoints}
+          goal={dailyGoal} 
+          progress={dailyProgress} 
+        />
+        <QuizProgress
+          title="Overall Mastery"
+          learnedCount={masteredWords.size}
+          totalCount={totalWords}
+          onStartQuiz={onStartQuiz}
+          quizButtonText="Master Quiz (All Words)"
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">

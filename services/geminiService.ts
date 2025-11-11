@@ -78,30 +78,3 @@ export const generateSpeech = async (text: string): Promise<string | null> => {
     return null;
   }
 };
-
-export const generateImageForWord = async (word: string): Promise<string | null> => {
-  try {
-    const prompt = `A simple, clear, visually appealing illustration representing the concept of: "${word}". Style: minimalist, educational, vector art.`;
-    
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: {
-        parts: [{ text: prompt }],
-      },
-      config: {
-        responseModalities: [Modality.IMAGE],
-      },
-    });
-
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        return part.inlineData.data;
-      }
-    }
-    return null;
-
-  } catch (error) {
-    console.error('Error generating image from Gemini API:', error);
-    return null;
-  }
-};

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const MenuIcon = ({ className }: { className?: string }) => (
@@ -73,6 +72,13 @@ export const QuizIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+export const HistoryIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h.01" />
+  </svg>
+);
+
 export const YouTubeIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
       <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
@@ -98,8 +104,40 @@ export const SpinnerIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const ImageIcon = ({ className }: { className?: string }) => (
+export const MicrophoneIcon = ({ className }: { className?: string }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
   </svg>
+);
+
+export const StopIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M6 6h12v12H6V6z" />
+  </svg>
+);
+
+export const PlayIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+export const TrophyIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M11.22 3.117A.75.75 0 0010 2.5h-.002a.75.75 0 00-.718.617L8.36 9.383a.75.75 0 01-.582.582l-6.266.92A.75.75 0 001 11.633v.002a.75.75 0 00.75.75H7.5a.75.75 0 01.75.75v5.75a.75.75 0 00.75.75h2.5a.75.75 0 00.75-.75V13.13a.75.75 0 01.75-.75h5.75a.75.75 0 00.75-.75v-.002a.75.75 0 00-.748-.748l-6.266-.92a.75.75 0 01-.582-.582L11.22 3.117z" clipRule="evenodd" />
+    </svg>
+);
+
+export const LeaderboardIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1zM3 15a1 1 0 000 2h14a1 1 0 100-2H3z"/>
+    </svg>
+);
+
+export const PuzzleIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M10 3.5a1.5 1.5 0 011.5 1.5v1.5H10a1.5 1.5 0 01-1.5-1.5V5A1.5 1.5 0 0110 3.5zM8.5 10a1.5 1.5 0 011.5-1.5h1.5V10a1.5 1.5 0 01-1.5 1.5H10A1.5 1.5 0 018.5 10zM10 15a1.5 1.5 0 011.5-1.5h1.5v1.5a1.5 1.5 0 01-1.5 1.5H10A1.5 1.5 0 0110 15zM5 8.5a1.5 1.5 0 011.5-1.5H8.5v1.5A1.5 1.5 0 017 10H6.5a1.5 1.5 0 01-1.5-1.5z"/>
+      <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-6.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z"/>
+    </svg>
 );

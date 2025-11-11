@@ -1,5 +1,7 @@
 {
   "name": "1000 Essential English Words",
   "description": "An interactive web application to learn 1000 essential English words for daily conversation, organized into 10 distinct categories with flashcards and images.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

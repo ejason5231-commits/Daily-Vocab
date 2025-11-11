@@ -1,6 +1,5 @@
 const DB_NAME = 'EssentialWordsDB';
 const AUDIO_STORE_NAME = 'audioCache';
-const IMAGE_STORE_NAME = 'imageCache';
 const DB_VERSION = 2;
 
 let db: IDBDatabase;
@@ -28,8 +27,8 @@ const openDB = (): Promise<IDBDatabase> => {
       if (!dbInstance.objectStoreNames.contains(AUDIO_STORE_NAME)) {
         dbInstance.createObjectStore(AUDIO_STORE_NAME, { keyPath: 'text' });
       }
-      if (!dbInstance.objectStoreNames.contains(IMAGE_STORE_NAME)) {
-        dbInstance.createObjectStore(IMAGE_STORE_NAME, { keyPath: 'word' });
+      if (dbInstance.objectStoreNames.contains('imageCache')) {
+        dbInstance.deleteObjectStore('imageCache');
       }
     };
   });
@@ -66,42 +65,6 @@ export const getAudio = async (text: string): Promise<Blob | null> => {
     };
     request.onerror = () => {
       console.error('Error getting audio from DB:', request.error);
-      reject(request.error);
-    };
-  });
-};
-
-export const saveImage = async (word: string, imageData: string): Promise<void> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(IMAGE_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(IMAGE_STORE_NAME);
-    const request = store.put({ word, imageData });
-    
-    request.onsuccess = () => resolve();
-    request.onerror = () => {
-      console.error('Error saving image to DB:', request.error);
-      reject(request.error);
-    };
-  });
-};
-
-export const getImage = async (word: string): Promise<string | null> => {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(IMAGE_STORE_NAME, 'readonly');
-    const store = transaction.objectStore(IMAGE_STORE_NAME);
-    const request = store.get(word);
-
-    request.onsuccess = () => {
-      if (request.result) {
-        resolve(request.result.imageData);
-      } else {
-        resolve(null);
-      }
-    };
-    request.onerror = () => {
-      console.error('Error getting image from DB:', request.error);
       reject(request.error);
     };
   });

@@ -21,3 +21,23 @@ export interface DailyProgress {
   wordsLearnedCount: number;
   quizzesCompletedCount: number;
 }
+
+export interface QuizResult {
+  date: string; // ISO string
+  title: string;
+  score: number;
+  totalQuestions: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  emoji: string;
+}
+
+export interface LeaderboardEntry {
+  name: string;
+  points: number;
+  isUser?: boolean;
+}
