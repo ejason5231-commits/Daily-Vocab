@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const MenuIcon = ({ className }: { className?: string }) => (
@@ -72,13 +73,6 @@ export const QuizIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const HistoryIcon = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m-6-8h.01" />
-  </svg>
-);
-
 export const YouTubeIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
       <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
@@ -123,12 +117,6 @@ export const PlayIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const ProfileIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-);
-
 export const TrophyIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M11.22 3.117A.75.75 0 0010 2.5h-.002a.75.75 0 00-.718.617L8.36 9.383a.75.75 0 01-.582.582l-6.266.92A.75.75 0 001 11.633v.002a.75.75 0 00.75.75H7.5a.75.75 0 01.75.75v5.75a.75.75 0 00.75.75h2.5a.75.75 0 00.75-.75V13.13a.75.75 0 01.75-.75h5.75a.75.75 0 00.75-.75v-.002a.75.75 0 00-.748-.748l-6.266-.92a.75.75 0 01-.582-.582L11.22 3.117z" clipRule="evenodd" />
@@ -141,9 +129,8 @@ export const LeaderboardIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const PuzzleIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M10 3.5a1.5 1.5 0 011.5 1.5v1.5H10a1.5 1.5 0 01-1.5-1.5V5A1.5 1.5 0 0110 3.5zM8.5 10a1.5 1.5 0 011.5-1.5h1.5V10a1.5 1.5 0 01-1.5 1.5H10A1.5 1.5 0 018.5 10zM10 15a1.5 1.5 0 011.5-1.5h1.5v1.5a1.5 1.5 0 01-1.5 1.5H10A1.5 1.5 0 0110 15zM5 8.5a1.5 1.5 0 011.5-1.5H8.5v1.5A1.5 1.5 0 017 10H6.5a1.5 1.5 0 01-1.5-1.5z"/>
-      <path d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-6.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z"/>
-    </svg>
+export const LockIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+  </svg>
 );

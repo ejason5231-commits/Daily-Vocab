@@ -12,7 +12,7 @@ const BannerAd: React.FC = () => {
     }, []);
 
     return (
-        <div className="w-full flex justify-center py-2 bg-gray-50 dark:bg-gray-900">
+        <div className="w-full flex justify-center pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] bg-gray-50 dark:bg-gray-900">
             <ins
                 className="adsbygoogle"
                 style={{ display: 'inline-block', width: '320px', height: '50px' }}

@@ -9,9 +9,10 @@ interface CategoryViewProps {
   learnedWords: Set<string>;
   onToggleLearned: (word: string) => void;
   onStartQuiz: (words: VocabularyWord[]) => void;
+  microphoneEnabled: boolean;
 }
 
-const CategoryView: React.FC<CategoryViewProps> = ({ category, words, learnedWords, onToggleLearned, onStartQuiz }) => {
+const CategoryView: React.FC<CategoryViewProps> = ({ category, words, learnedWords, onToggleLearned, onStartQuiz, microphoneEnabled }) => {
   const learnedCount = useMemo(() => {
     if (!words || words.length === 0) return 0;
     return words.filter(word => learnedWords.has(word.word)).length;
@@ -49,6 +50,7 @@ const CategoryView: React.FC<CategoryViewProps> = ({ category, words, learnedWor
                 wordData={word} 
                 isLearned={learnedWords.has(word.word)}
                 onToggleLearned={onToggleLearned}
+                microphoneEnabled={microphoneEnabled}
               />
             ))}
           </div>

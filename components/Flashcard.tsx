@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
 import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, MicrophoneIcon, StopIcon, PlayIcon } from './icons';
@@ -8,9 +9,10 @@ interface FlashcardProps {
   wordData: VocabularyWord;
   isLearned: boolean;
   onToggleLearned: (word: string) => void;
+  microphoneEnabled: boolean;
 }
 
-const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLearned }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLearned, microphoneEnabled }) => {
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -149,36 +151,38 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
           </button>
         </div>
 
-        <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Practice Pronunciation</h4>
-          <div className="flex items-center space-x-2">
-            {!isRecording ? (
+        {microphoneEnabled && (
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Practice Pronunciation</h4>
+            <div className="flex items-center space-x-2">
+              {!isRecording ? (
+                <button
+                  onClick={handleStartRecording}
+                  className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500"
+                  aria-label="Start recording"
+                >
+                  <MicrophoneIcon className="h-6 w-6" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleStopRecording}
+                  className="p-2 rounded-full text-red-500 bg-red-100 dark:bg-red-900/50 animate-pulse"
+                  aria-label="Stop recording"
+                >
+                  <StopIcon className="h-6 w-6" />
+                </button>
+              )}
               <button
-                onClick={handleStartRecording}
-                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500"
-                aria-label="Start recording"
+                onClick={handlePlayUserAudio}
+                disabled={!userAudioURL || isRecording}
+                className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Play your recording"
               >
-                <MicrophoneIcon className="h-6 w-6" />
+                <PlayIcon className="h-6 w-6" />
               </button>
-            ) : (
-              <button
-                onClick={handleStopRecording}
-                className="p-2 rounded-full text-red-500 bg-red-100 dark:bg-red-900/50 animate-pulse"
-                aria-label="Stop recording"
-              >
-                <StopIcon className="h-6 w-6" />
-              </button>
-            )}
-            <button
-              onClick={handlePlayUserAudio}
-              disabled={!userAudioURL || isRecording}
-              className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Play your recording"
-            >
-              <PlayIcon className="h-6 w-6" />
-            </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

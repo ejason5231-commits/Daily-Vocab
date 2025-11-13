@@ -1,3 +1,4 @@
+
 export interface Category {
   name: string;
   emoji: string;
@@ -22,13 +23,6 @@ export interface DailyProgress {
   quizzesCompletedCount: number;
 }
 
-export interface QuizResult {
-  date: string; // ISO string
-  title: string;
-  score: number;
-  totalQuestions: number;
-}
-
 export interface Badge {
   id: string;
   name: string;
@@ -40,4 +34,19 @@ export interface LeaderboardEntry {
   name: string;
   points: number;
   isUser?: boolean;
+}
+
+export interface Tier {
+  name: string;
+  emoji: string;
+  minPoints: number;
+  rangeText: string;
+}
+
+// FIX: Add missing QuizResult interface for HistoryView component
+export interface QuizResult {
+  title: string;
+  date: string;
+  score: number;
+  totalQuestions: number;
 }
