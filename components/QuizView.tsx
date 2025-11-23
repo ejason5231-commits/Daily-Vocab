@@ -32,6 +32,62 @@ interface Question {
   originalWord: VocabularyWord;
 }
 
+const BUTTON_COLORS = [
+    { bg: 'bg-red-500', border: 'border-red-400', bottom: 'border-b-red-700' },
+    { bg: 'bg-orange-500', border: 'border-orange-400', bottom: 'border-b-orange-700' },
+    { bg: 'bg-amber-400', border: 'border-amber-300', bottom: 'border-b-amber-600' },
+    { bg: 'bg-green-500', border: 'border-green-400', bottom: 'border-b-green-700' },
+    { bg: 'bg-teal-500', border: 'border-teal-400', bottom: 'border-b-teal-700' },
+    { bg: 'bg-cyan-500', border: 'border-cyan-400', bottom: 'border-b-cyan-700' },
+    { bg: 'bg-blue-500', border: 'border-blue-400', bottom: 'border-b-blue-700' },
+    { bg: 'bg-indigo-500', border: 'border-indigo-400', bottom: 'border-b-indigo-700' },
+    { bg: 'bg-purple-500', border: 'border-purple-400', bottom: 'border-b-purple-700' },
+    { bg: 'bg-fuchsia-500', border: 'border-fuchsia-400', bottom: 'border-b-fuchsia-700' },
+    { bg: 'bg-pink-500', border: 'border-pink-400', bottom: 'border-b-pink-700' },
+    { bg: 'bg-rose-500', border: 'border-rose-400', bottom: 'border-b-rose-700' },
+];
+
+const HandDrawnMapBackground = () => (
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Parchment Base */}
+        <div className="absolute inset-0 bg-[#f4e4bc] dark:bg-gray-900 transition-colors duration-300"></div>
+        
+        {/* Paper Texture Noise */}
+        <svg className="absolute inset-0 w-full h-full opacity-30 mix-blend-multiply dark:mix-blend-overlay">
+            <filter id="paperNoise">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch" />
+            </filter>
+            <rect width="100%" height="100%" filter="url(#paperNoise)" />
+        </svg>
+
+        {/* Topographic Lines (Contour Lines) */}
+        <svg className="absolute inset-0 w-full h-full opacity-15 dark:opacity-20">
+            <defs>
+                <pattern id="topoLines" x="0" y="0" width="600" height="600" patternUnits="userSpaceOnUse">
+                     <path d="M0,150 Q150,50 300,150 T600,150" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#8d6e63] dark:text-gray-600"/>
+                     <path d="M-50,300 Q200,400 450,300 T850,350" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#8d6e63] dark:text-gray-600"/>
+                     <path d="M0,450 Q150,550 300,450 T600,500" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[#8d6e63] dark:text-gray-600"/>
+                     
+                     {/* Elevation Circles */}
+                     <circle cx="150" cy="150" r="100" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#8d6e63] dark:text-gray-600" strokeDasharray="8,4"/>
+                     <circle cx="150" cy="150" r="70" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#8d6e63] dark:text-gray-600" />
+                     
+                     <circle cx="450" cy="400" r="120" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#8d6e63] dark:text-gray-600" strokeDasharray="12,6"/>
+                     <circle cx="450" cy="400" r="80" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#8d6e63] dark:text-gray-600" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#topoLines)" />
+        </svg>
+
+        {/* Compass Rose Hint (Subtle) */}
+        <div className="absolute top-20 right-10 opacity-10 pointer-events-none">
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M50 0 L60 40 L100 50 L60 60 L50 100 L40 60 L0 50 L40 40 Z" fill="#5d4037" />
+            </svg>
+        </div>
+    </div>
+);
+
 const QuizView: React.FC<QuizViewProps> = ({ 
   words, 
   onQuizComplete, 
@@ -95,7 +151,7 @@ const QuizView: React.FC<QuizViewProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
       if (quizState === 'level_select' && scrollContainerRef.current) {
-         const nodeSpacing = 140; // Increased spacing for better visual
+         const nodeSpacing = 140; 
          const topPadding = 180;
          
          // Calculate Y position of the unlocked level
@@ -182,12 +238,12 @@ const QuizView: React.FC<QuizViewProps> = ({
   // --- Render Helpers ---
 
   const QuizContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-sky-200 via-purple-100 to-pink-100 dark:from-sky-900 dark:via-purple-900 dark:to-pink-900 px-4 pt-2 pb-4 font-sans transition-colors duration-300">
-      {/* Background Decorations */}
-      <div className="absolute top-10 left-[-50px] opacity-60 animate-pulse pointer-events-none"><CloudIcon className="w-32 h-20 text-white/50" /></div>
-      <div className="absolute top-20 right-[-20px] opacity-50 animate-bounce pointer-events-none" style={{ animationDuration: '3s' }}><CloudIcon className="w-24 h-16 text-white/40" /></div>
-      <div className="absolute bottom-40 left-10 opacity-30 pointer-events-none"><StarIcon className="w-12 h-12 text-yellow-200" /></div>
-      <div className="absolute bottom-20 right-10 opacity-30 pointer-events-none"><StarIcon className="w-8 h-8 text-pink-200" /></div>
+    <div className="relative min-h-screen w-full overflow-x-hidden font-sans transition-colors duration-300">
+      <HandDrawnMapBackground />
+      
+      {/* Background Decorations (Optional extra flair) */}
+      <div className="absolute top-10 left-[-50px] opacity-60 animate-pulse pointer-events-none"><CloudIcon className="w-32 h-20 text-white/40" /></div>
+      <div className="absolute top-20 right-[-20px] opacity-50 animate-bounce pointer-events-none" style={{ animationDuration: '3s' }}><CloudIcon className="w-24 h-16 text-white/30" /></div>
       
       <div className="relative z-10 max-w-3xl mx-auto flex flex-col min-h-[calc(100vh-2rem)] items-center pt-1 sm:pt-4 pb-12">
         {children}
@@ -241,13 +297,12 @@ const QuizView: React.FC<QuizViewProps> = ({
     const points = Array.from({ length: totalLevels }, (_, i) => {
         const levelIndex = i; 
         const y = topPadding + (levelIndex * nodeSpacing);
-        // More curvy path
         const xOffset = Math.sin(levelIndex * 1.2) * 35; 
         const x = 50 + xOffset; 
         return { x, y, level: levelIndex + 1 };
     });
 
-    // SVG Path
+    // SVG Path Construction
     let pathD = `M ${points[0].x}% ${points[0].y}px`;
     for (let i = 0; i < points.length - 1; i++) {
         const curr = points[i];
@@ -259,21 +314,15 @@ const QuizView: React.FC<QuizViewProps> = ({
 
     // Decor Elements
     const decorations = points.map((p, i) => {
-        const type = (i * 7) % 5; // pseudo-random distribution
+        const type = (i * 7) % 5; 
         const side = i % 2 === 0 ? 'left' : 'right';
         const xPos = side === 'left' ? Math.max(8, p.x - 35) : Math.min(92, p.x + 35);
         return { type, x: xPos, y: p.y, id: i };
     });
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-[#f4e4bc] dark:bg-gray-900 font-serif transition-colors duration-300">
-            {/* SVG Parchment Texture Pattern */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
-                <filter id="noise">
-                    <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-                </filter>
-                <rect width="100%" height="100%" filter="url(#noise)" />
-            </svg>
+        <div className="relative w-full h-screen overflow-hidden font-serif transition-colors duration-300">
+            <HandDrawnMapBackground />
 
             {/* Task Bar / Header */}
             <div className="absolute top-0 left-0 w-full z-50 bg-[#e6d2aa] dark:bg-gray-800 border-b-4 border-[#c2a67a] dark:border-gray-700 shadow-md flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 h-auto min-h-[80px] box-border pointer-events-auto">
@@ -302,20 +351,13 @@ const QuizView: React.FC<QuizViewProps> = ({
             <div 
                 ref={scrollContainerRef}
                 className="w-full h-full overflow-y-auto relative no-scrollbar"
-                style={{ paddingTop: '80px' }} // Push content below taskbar
+                style={{ paddingTop: '80px' }} 
             >
                 <div style={{ height: mapHeight }} className="w-full relative">
                     
-                    {/* Map Zones / Islands */}
+                    {/* Map Zones / Islands / Terrain Underlay */}
                     <div className="absolute inset-0 pointer-events-none opacity-40">
-                         {/* We can place large colored blobs to represent terrain zones behind the path */}
                          <svg width="100%" height="100%" preserveAspectRatio="none">
-                            <defs>
-                                <pattern id="grassPattern" width="20" height="20" patternUnits="userSpaceOnUse">
-                                    <path d="M5 15 Q10 5 15 15" fill="none" stroke="#86efac" strokeWidth="1" opacity="0.5"/>
-                                </pattern>
-                            </defs>
-                            {/* Simple large blobs for terrain variation */}
                             <ellipse cx="20%" cy="15%" rx="60%" ry="10%" fill="#dcfce7" />
                             <ellipse cx="80%" cy="40%" rx="50%" ry="15%" fill="#fef9c3" />
                             <ellipse cx="30%" cy="70%" rx="60%" ry="12%" fill="#e0f2fe" />
@@ -327,9 +369,9 @@ const QuizView: React.FC<QuizViewProps> = ({
                         <RiverIcon className="w-full h-full text-blue-300" />
                     </div>
 
-                    {/* Path Line - Hand Drawn Style */}
+                    {/* Path Line */}
                     <svg className="absolute top-0 left-0 w-full h-full pointer-events-none filter drop-shadow-sm">
-                        {/* Outer border for the path */}
+                        {/* Outer path */}
                         <path 
                             d={pathD} 
                             fill="none" 
@@ -338,7 +380,7 @@ const QuizView: React.FC<QuizViewProps> = ({
                             strokeLinecap="round"
                             className="opacity-40"
                         />
-                        {/* Inner path color */}
+                        {/* Inner dotted path */}
                         <path 
                             d={pathD} 
                             fill="none" 
@@ -362,7 +404,6 @@ const QuizView: React.FC<QuizViewProps> = ({
                             {d.type === 3 && <GrassIcon className="w-10 h-10 text-[#22c55e]" />}
                             {d.type === 4 && <CloudIcon className="w-16 h-10 text-white opacity-80" />}
                             
-                            {/* Castle at the end */}
                             {d.id === totalLevels - 1 && (
                                 <div className="absolute top-[-40px]">
                                      <CastleIcon className="w-28 h-28 text-[#64748b] drop-shadow-xl" />
@@ -377,9 +418,19 @@ const QuizView: React.FC<QuizViewProps> = ({
                         const isCurrent = p.level === unlockedLevel;
                         const isCompleted = p.level < unlockedLevel;
 
-                        // Hand-drawn circle style
-                        const baseClasses = "relative w-14 h-14 rounded-full flex items-center justify-center border-[3px] shadow-lg transform transition-all duration-200";
+                        // Colorful Buttons Logic
+                        const colorIndex = (p.level - 1) % BUTTON_COLORS.length;
+                        const colorTheme = BUTTON_COLORS[colorIndex];
+
+                        // 3D Oval Button Style
+                        const baseClasses = "relative w-20 h-14 rounded-[40%] flex items-center justify-center shadow-xl transform transition-all duration-200 border-x-2 border-t-2 border-b-[6px] active:border-b-2 active:translate-y-[4px]";
                         
+                        const colorClasses = isLocked
+                            ? 'bg-gray-200 border-gray-300 border-b-gray-400 cursor-not-allowed text-gray-400'
+                            : isCompleted
+                                ? `${colorTheme.bg} ${colorTheme.border} ${colorTheme.bottom} hover:scale-105 text-white/90`
+                                : `${colorTheme.bg} ${colorTheme.border} ${colorTheme.bottom} hover:scale-105 text-white`;
+
                         return (
                             <div 
                                 key={p.level}
@@ -388,28 +439,19 @@ const QuizView: React.FC<QuizViewProps> = ({
                             >
                                 <button
                                     onClick={() => !isLocked && handleLevelSelect(p.level)}
-                                    className={`
-                                        ${baseClasses}
-                                        ${isLocked 
-                                            ? 'bg-gray-200 border-gray-400 cursor-not-allowed' 
-                                            : isCompleted 
-                                                ? 'bg-[#fbbf24] border-[#d97706] hover:scale-110' 
-                                                : 'bg-[#facc15] border-[#b45309] hover:scale-110 animate-bounce'
-                                        }
-                                    `}
-                                    style={{ animationDuration: '2s' }} // Slower bounce
+                                    className={`${baseClasses} ${colorClasses}`}
                                 >
                                     {isLocked && <LockIcon className="w-6 h-6 text-gray-400" />}
                                     {isCompleted && <StarIcon className="w-8 h-8 text-white drop-shadow-md" />}
                                     {isCurrent && (
                                         <>
-                                            <div className="absolute -top-11 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDuration: '1s' }}>
+                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10">
                                                 <MapLocationIcon className="w-12 h-12 drop-shadow-lg" />
                                             </div>
-                                            <span className="font-black text-[#713f12] text-lg">{p.level}</span>
+                                            <span className="font-black text-white text-lg relative z-10 drop-shadow-md">{p.level}</span>
                                         </>
                                     )}
-                                    {!isLocked && !isCompleted && !isCurrent && <span className="font-bold text-[#78350f]">{p.level}</span>}
+                                    {!isLocked && !isCompleted && !isCurrent && <span className="font-black drop-shadow-md text-xl">{p.level}</span>}
                                 </button>
                                 
                                 {/* Level Label */}
