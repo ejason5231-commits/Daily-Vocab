@@ -338,20 +338,26 @@ export const TravelIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const TechnologyIcon = ({ className }: { className?: string }) => (
+export const WorkIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Shadow */}
-    <ellipse cx="32" cy="54" rx="20" ry="4" fill="#000" opacity="0.2"/>
-    {/* Gear Back (Extrusion) */}
-    <path d="M32 12 L36 4 L44 8 L46 16 L54 18 L54 26 L48 30 L50 38 L42 44 L34 42 L30 50 L22 46 L20 38 L12 36 L12 28 L18 24 L16 16 L24 10 L32 12 Z" fill="#4B5563" transform="translate(0, 4)"/>
-    {/* Gear Front */}
-    <path d="M32 12 L36 4 L44 8 L46 16 L54 18 L54 26 L48 30 L50 38 L42 44 L34 42 L30 50 L22 46 L20 38 L12 36 L12 28 L18 24 L16 16 L24 10 L32 12 Z" fill="#9CA3AF"/>
-    {/* Inner Circle Extrusion */}
-    <circle cx="32" cy="27" r="10" fill="#374151" transform="translate(0, 4)"/>
-    {/* Inner Circle Front */}
-    <circle cx="32" cy="27" r="10" fill="#E5E7EB"/>
-    {/* Axle Hole */}
-    <circle cx="32" cy="27" r="4" fill="#1F2937"/>
+     {/* Shadow */}
+     <rect x="10" y="54" width="44" height="4" rx="2" fill="#000" opacity="0.2"/>
+     {/* Body Back (Depth) */}
+     <rect x="8" y="24" width="48" height="34" rx="4" fill="#78350F" transform="translate(0, 4)"/>
+     {/* Handle */}
+     <path d="M24 24 V18 C24 14 28 12 32 12 C36 12 40 14 40 18 V24" stroke="#451A03" strokeWidth="6" strokeLinecap="round"/>
+     {/* Body Front */}
+     <rect x="8" y="24" width="48" height="34" rx="4" fill="#92400E"/>
+     {/* Flap/Top Section */}
+     <rect x="8" y="24" width="48" height="12" fill="#B45309" stroke="#78350F" strokeWidth="2"/>
+     {/* Buckles */}
+     <rect x="16" y="28" width="6" height="8" rx="1" fill="#FCD34D"/>
+     <rect x="42" y="28" width="6" height="8" rx="1" fill="#FCD34D"/>
+     {/* Corner Guards */}
+     <path d="M8 54 H12 V58 H8 Z" fill="#78350F"/>
+     <path d="M52 54 H56 V58 H52 Z" fill="#78350F"/>
+     {/* Gloss */}
+     <rect x="10" y="26" width="44" height="2" fill="white" fillOpacity="0.2"/>
   </svg>
 );
 

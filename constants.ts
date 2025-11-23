@@ -5,7 +5,7 @@ export const CATEGORIES: Category[] = [
   { name: 'Literature', emoji: '📚', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Science', emoji: '🔬', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Travel', emoji: '🌍', color: 'bg-white', textColor: 'text-gray-900' },
-  { name: 'Technology', emoji: '⚙️', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Work', emoji: '💼', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Emotions', emoji: '❤️', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Food', emoji: '👨‍🍳', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Conversation', emoji: '💬', color: 'bg-white', textColor: 'text-gray-900' },
@@ -19,7 +19,7 @@ const DATA_MAPPING = {
   'Travel & Tourism': 'Travel',
   'Food & Dining': 'Food',
   'Education & Classroom': 'Literature',
-  'Workplace & Office': 'Technology',
+  'Workplace & Office': 'Work',
   'Home & Household': 'Art', // Best available slot for unused data, though imperfect
   'Shopping & Money': 'Finance',
   'Health & Body': 'Science', // Best available slot
@@ -730,7 +730,7 @@ const RAW_VOCABULARY_DATA: Record<string, VocabularyWord[]> = {
     { word: "shower / bath (noun/verb)", definition: "wash the body", example: "I take a shower every morning." },
     { word: "soap (noun)", definition: "cleaning substance", example: "Use soap to wash your hands." },
     { word: "shampoo (noun/verb)", definition: "wash hair", example: "I shampoo my hair daily." },
-    { word: "toothpaste (noun)", definition: "paste for cleaning teeth", example: "Put toothpaste on your toothbrush." },
+    { word: "toothpaste (noun)", definition: "paste for cleaning teeth", example: "Put toothpaste on the brush." },
     { word: "toothbrush (noun)", definition: "brush for teeth", example: "Use a soft toothbrush for your teeth." },
     { word: "nail clipper (noun)", definition: "tool to cut nails", example: "Trim your nails with a nail clipper." },
     { word: "mirror (noun)", definition: "reflects image", example: "Look in the mirror to check your hair." },

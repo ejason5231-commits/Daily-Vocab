@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -189,10 +190,14 @@ const App: React.FC = () => {
   const addPoints = (points: number) => {
     setUserPoints(prev => {
         const newPoints = prev + points;
-        checkBadges(newPoints, learnedWords.size, masteredWords.size);
+        checkBadges(newPoints, learnedCountMemo, masteredCountMemo);
         return newPoints;
     });
   };
+  
+  // Memoize counts to avoid recalculating in addPoints
+  const learnedCountMemo = useMemo(() => learnedWords.size, [learnedWords]);
+  const masteredCountMemo = useMemo(() => masteredWords.size, [masteredWords]);
 
   const checkBadges = (points: number, learnedCount: number, masteredCount: number) => {
     const newBadges: string[] = [];
@@ -316,10 +321,7 @@ const App: React.FC = () => {
       } else if (currentView === 'leaderboard') {
           setCurrentView('dashboard');
       }
-      // If in quiz_journey (root of Quiz tab), handleBack typically opens menu or does nothing
-      if (currentView === 'quiz_journey') {
-          setIsSidebarOpen(true);
-      }
+      // Sidebar should only open via menu button, not lateral actions/back logic
   };
 
   const handleTabChange = (tab: 'home' | 'quiz' | 'ai') => {
@@ -357,7 +359,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans"
+      className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -470,7 +472,7 @@ const App: React.FC = () => {
               <QuizView
                 words={allJourneyWords}
                 onQuizComplete={handleQuizComplete}
-                onQuizExit={() => setIsSidebarOpen(true)}
+                onQuizExit={() => {}} // No-op, sidebar only opens via menu button
                 title="Vocab Journey"
                 categoryName="Vocab Journey"
                 unlockedLevel={globalUnlockedLevel}
