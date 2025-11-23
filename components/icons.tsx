@@ -259,16 +259,18 @@ export const AvatarIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const TravelerIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="7" y="16" width="10" height="8" rx="2" fill="#78350F" />
-    <path d="M6 24V20C6 17.5 8 16 12 16C16 16 18 17.5 18 20V24" fill="#60A5FA" stroke="#1D4ED8" strokeWidth="1.5"/>
-    <circle cx="12" cy="11" r="5" fill="#FDE047" stroke="#D97706" strokeWidth="1.5"/>
-    <path d="M5 9C5 9 7 4 12 4C17 4 19 9 19 9" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5" strokeLinejoin="round"/>
-    <path d="M3 9H21" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="10.5" cy="11" r="1" fill="#1F2937"/>
-    <circle cx="13.5" cy="11" r="1" fill="#1F2937"/>
-    <path d="M10.5 13.5Q12 14.5 13.5 13.5" stroke="#1F2937" strokeWidth="1" strokeLinecap="round"/>
+export const MapLocationIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    {/* Shadow */}
+    <ellipse cx="32" cy="60" rx="12" ry="4" fill="#000" opacity="0.2"/>
+    {/* Pin Body Depth - Darker */}
+    <path d="M32 58 C32 58 54 36 54 22 C54 10 44 2 32 2 C20 2 10 10 10 22 C10 36 32 58 32 58 Z" fill="#0a1f5e" transform="translate(0, 2)"/>
+    {/* Pin Body Front - #123499 */}
+    <path d="M32 58 C32 58 54 36 54 22 C54 10 44 2 32 2 C20 2 10 10 10 22 C10 36 32 58 32 58 Z" fill="#123499"/>
+    {/* Inner Circle */}
+    <circle cx="32" cy="22" r="8" fill="white"/>
+    {/* Gloss */}
+    <path d="M20 12 Q32 6 44 12" stroke="white" strokeWidth="3" strokeOpacity="0.4" strokeLinecap="round"/>
   </svg>
 );
 
@@ -394,7 +396,7 @@ export const FoodIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export const ConversationIcon = ({ className }: { className?: string }) => (
+export const SocialIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
      {/* Shadow */}
      <ellipse cx="32" cy="54" rx="20" ry="4" fill="#000" opacity="0.2"/>

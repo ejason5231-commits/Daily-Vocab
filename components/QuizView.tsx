@@ -3,8 +3,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { VocabularyWord } from '../types';
 import { 
     LockIcon, CloudIcon, StarIcon, OwlIcon, BackIcon, SaveIcon, 
-    CoinIcon, MountainIcon, TreeIcon, CastleIcon, TravelerIcon, PlayIcon,
-    RuinsIcon, RiverIcon, GrassIcon
+    CoinIcon, MountainIcon, TreeIcon, CastleIcon, PlayIcon,
+    RuinsIcon, RiverIcon, GrassIcon, MapLocationIcon
 } from './icons';
 
 interface QuizCompletionResult {
@@ -403,8 +403,8 @@ const QuizView: React.FC<QuizViewProps> = ({
                                     {isCompleted && <StarIcon className="w-8 h-8 text-white drop-shadow-md" />}
                                     {isCurrent && (
                                         <>
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDuration: '1s' }}>
-                                                <TravelerIcon className="w-12 h-12 drop-shadow-lg filter brightness-110" />
+                                            <div className="absolute -top-11 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDuration: '1s' }}>
+                                                <MapLocationIcon className="w-12 h-12 drop-shadow-lg" />
                                             </div>
                                             <span className="font-black text-[#713f12] text-lg">{p.level}</span>
                                         </>

@@ -4,7 +4,7 @@ import { Category, VocabularyWord, DailyGoal, DailyProgress } from '../types';
 import UserStats from './UserStats';
 import { 
   LiteratureIcon, ScienceIcon, TravelIcon, WorkIcon, 
-  EmotionsIcon, FoodIcon, ConversationIcon, TimeIcon, ArtIcon, FinanceIcon 
+  EmotionsIcon, FoodIcon, SocialIcon, TimeIcon, ArtIcon, FinanceIcon 
 } from './icons';
 
 interface DashboardProps {
@@ -49,7 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       case 'Work': return <WorkIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Emotions': return <EmotionsIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Food': return <FoodIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Conversation': return <ConversationIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Social': return <SocialIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Time': return <TimeIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Art': return <ArtIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Finance': return <FinanceIcon className="w-10 h-10 sm:w-12 sm:h-12" />;

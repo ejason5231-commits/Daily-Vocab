@@ -8,7 +8,7 @@ export const CATEGORIES: Category[] = [
   { name: 'Work', emoji: '💼', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Emotions', emoji: '❤️', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Food', emoji: '👨‍🍳', color: 'bg-white', textColor: 'text-gray-900' },
-  { name: 'Conversation', emoji: '💬', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Social', emoji: '💬', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Time', emoji: '⏰', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Art', emoji: '🎨', color: 'bg-white', textColor: 'text-gray-900' },
   { name: 'Finance', emoji: '💰', color: 'bg-white', textColor: 'text-gray-900' },
@@ -25,7 +25,7 @@ const DATA_MAPPING = {
   'Health & Body': 'Science', // Best available slot
   'Time & Weather': 'Time',
   'Feelings & Personality': 'Emotions',
-  'People & Social Life': 'Conversation',
+  'People & Social Life': 'Social',
 };
 
 const RAW_VOCABULARY_DATA: Record<string, VocabularyWord[]> = {
