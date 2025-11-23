@@ -1,27 +1,19 @@
-
-
-
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CategoryView from './components/CategoryView';
 import QuizView from './components/QuizView';
-import Flashcard from './components/Flashcard';
 import AiCreateView from './components/AiCreateView';
-import BannerAd from './components/BannerAd';
 import LeaderboardView from './components/LeaderboardView';
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
+import BottomNavigation from './components/BottomNavigation';
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
-import { VOCABULARY_DATA } from './constants';
+import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
-import { showInterstitialAd, showRewardAd, showRewardedInterstitialAd } from './services/adService';
-import { SparklesIcon } from './components/icons';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
-
-type View = 'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard';
 
 interface QuizCompletionResult {
   correctlyAnsweredWords: string[];
@@ -32,333 +24,494 @@ interface QuizCompletionResult {
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [previousView, setPreviousView] = useState<View>('dashboard');
+  // Navigation State
+  const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey'>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'ai'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+  const [isQuizActive, setIsQuizActive] = useState(false);
+
+  // Settings State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const storedTheme = window.localStorage.getItem('theme');
-      if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+      const stored = window.localStorage.getItem('theme');
+      if (stored === 'dark' || stored === 'light') return stored;
     }
     return 'light';
   });
+  
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [userName, setUserName] = useState("Learner");
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const saved = localStorage.getItem('notificationsEnabled');
-      return saved !== 'false';
-    }
-    return true;
+  // Data State
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [wordCache, setWordCache] = useState<Record<string, VocabularyWord[]>>(VOCABULARY_DATA);
+  const [learnedWords, setLearnedWords] = useState<Set<string>>(() => {
+    const stored = window.localStorage.getItem('learnedWords');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
+  const [masteredWords, setMasteredWords] = useState<Set<string>>(() => {
+    const stored = window.localStorage.getItem('masteredWords');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
+  
+  // Category-specific unlocked levels
+  const [unlockedLevels, setUnlockedLevels] = useState<Record<string, number>>(() => {
+      const stored = window.localStorage.getItem('unlockedLevels');
+      return stored ? JSON.parse(stored) : {};
   });
 
-  const [microphoneEnabled, setMicrophoneEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const saved = localStorage.getItem('microphoneEnabled');
-      return saved !== 'false'; // default to true
-    }
-    return true;
-  });
-
-  const [learnedWords, setLearnedWords] = useState<Set<string>>(() => new Set(JSON.parse(localStorage.getItem('learnedWords') || '[]')));
-  const [masteredWords, setMasteredWords] = useState<Set<string>>(() => new Set(JSON.parse(localStorage.getItem('masteredWords') || '[]')));
-  const [quizCompletionCount, setQuizCompletionCount] = useState<number>(() => parseInt(localStorage.getItem('quizCompletionCount') || '0', 10));
-  const [dailyGoal, setDailyGoal] = useState<DailyGoal>(() => JSON.parse(localStorage.getItem('dailyGoal') || '{"type":"words","value":10}'));
-  const [dailyProgress, setDailyProgress] = useState<DailyProgress>(() => {
-    const saved = localStorage.getItem('dailyProgress');
-    if (saved) {
-        const progress: DailyProgress = JSON.parse(saved);
-        if (progress.date !== getTodayString()) {
-            return { date: getTodayString(), wordsLearnedCount: 0, quizzesCompletedCount: 0 };
-        }
-        return progress;
-    }
-    return { date: getTodayString(), wordsLearnedCount: 0, quizzesCompletedCount: 0 };
+  // Global Journey unlocked level
+  const [globalUnlockedLevel, setGlobalUnlockedLevel] = useState<number>(() => {
+      const stored = window.localStorage.getItem('globalUnlockedLevel');
+      return stored ? parseInt(stored, 10) : 1;
   });
 
   // Gamification State
-  const [userName, setUserName] = useState<string>(() => localStorage.getItem('userName') || 'Learner');
-  const [userPoints, setUserPoints] = useState<number>(() => parseInt(localStorage.getItem('userPoints') || '0', 10));
-  const [quizScore, setQuizScore] = useState<number>(() => parseInt(localStorage.getItem('quizScore') || '0', 10));
-  const [earnedBadges, setEarnedBadges] = useState<Set<string>>(() => new Set(JSON.parse(localStorage.getItem('earnedBadges') || '[]')));
-  const [newlyUnlockedBadge, setNewlyUnlockedBadge] = useState<Badge | null>(null);
-  const [levelUpNotification, setLevelUpNotification] = useState<{ level: number; categoryName: string } | null>(null);
-  const [hasGeneratedAiCategory, setHasGeneratedAiCategory] = useState<boolean>(() => localStorage.getItem('hasGeneratedAiCategory') === 'true');
-  const [unlockedLevels, setUnlockedLevels] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('unlockedLevels');
-    return saved ? JSON.parse(saved) : { master: 1 };
+  const [userPoints, setUserPoints] = useState<number>(() => {
+      const stored = window.localStorage.getItem('userPoints');
+      return stored ? parseInt(stored, 10) : 0;
+  });
+  const [earnedBadges, setEarnedBadges] = useState<string[]>(() => {
+      const stored = window.localStorage.getItem('earnedBadges');
+      return stored ? JSON.parse(stored) : [];
+  });
+  const [dailyGoal, setDailyGoal] = useState<DailyGoal>(() => {
+    const stored = window.localStorage.getItem('dailyGoal');
+    return stored ? JSON.parse(stored) : { type: 'words', value: 40 };
+  });
+  const [dailyProgress, setDailyProgress] = useState<DailyProgress>(() => {
+    const stored = window.localStorage.getItem('dailyProgress');
+    const today = getTodayString();
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed.date === today) return parsed;
+    }
+    return { date: today, wordsLearnedCount: 0, quizzesCompletedCount: 0 };
   });
 
+  // Notification Queues
+  const [badgeNotification, setBadgeNotification] = useState<Badge | null>(null);
+  const [levelUpNotification, setLevelUpNotification] = useState<{level: number, categoryName: string} | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [wordCache, setWordCache] = useState<Record<string, VocabularyWord[]>>(VOCABULARY_DATA);
-  const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
-  const [quizTitle, setQuizTitle] = useState<string>('');
+  // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  
+
+  // Quiz State for Category Drill-down
+  const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
   const [quizStartLevel, setQuizStartLevel] = useState<number | null>(null);
-
-  const newlyLearnedCount = useRef(0);
-  const interstitialTriggerCount = useRef(0);
-
-  // Effect hooks for persistence
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
-
-    let themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    if (!themeColorMeta) {
-        themeColorMeta = document.createElement('meta');
-        themeColorMeta.setAttribute('name', 'theme-color');
-        document.head.appendChild(themeColorMeta);
-    }
-    // Match header colors: bg-white and dark:bg-gray-800
-    themeColorMeta.setAttribute('content', theme === 'dark' ? '#1F2937' : '#FFFFFF');
-  }, [theme]);
-  useEffect(() => { localStorage.setItem('notificationsEnabled', String(notificationsEnabled)); }, [notificationsEnabled]);
-  useEffect(() => { localStorage.setItem('microphoneEnabled', String(microphoneEnabled)); }, [microphoneEnabled]);
-  useEffect(() => { localStorage.setItem('learnedWords', JSON.stringify(Array.from(learnedWords))); }, [learnedWords]);
-  useEffect(() => { localStorage.setItem('masteredWords', JSON.stringify(Array.from(masteredWords))); }, [masteredWords]);
-  useEffect(() => { localStorage.setItem('quizCompletionCount', String(quizCompletionCount)); }, [quizCompletionCount]);
-  useEffect(() => { localStorage.setItem('dailyGoal', JSON.stringify(dailyGoal)); }, [dailyGoal]);
-  useEffect(() => { localStorage.setItem('dailyProgress', JSON.stringify(dailyProgress)); }, [dailyProgress]);
-  useEffect(() => { localStorage.setItem('userName', userName); }, [userName]);
-  useEffect(() => { localStorage.setItem('userPoints', String(userPoints)); }, [userPoints]);
-  useEffect(() => { localStorage.setItem('quizScore', String(quizScore)); }, [quizScore]);
-  useEffect(() => { localStorage.setItem('earnedBadges', JSON.stringify(Array.from(earnedBadges))); }, [earnedBadges]);
-  useEffect(() => { localStorage.setItem('hasGeneratedAiCategory', String(hasGeneratedAiCategory)); }, [hasGeneratedAiCategory]);
-  useEffect(() => { localStorage.setItem('unlockedLevels', JSON.stringify(unlockedLevels)); }, [unlockedLevels]);
+  const [quizTitle, setQuizTitle] = useState<string>('');
   
-  // Reset daily progress if the day changes
-  useEffect(() => { if (dailyProgress.date !== getTodayString()) setDailyProgress({ date: getTodayString(), wordsLearnedCount: 0, quizzesCompletedCount: 0 }); }, []);
+  // Search Logic
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Gamification Logic
-  const addPoints = useCallback((points: number) => setUserPoints(prev => prev + points), []);
+  // Global Journey Words (Flattened)
+  const allJourneyWords = useMemo(() => {
+    return (Object.values(wordCache) as VocabularyWord[][]).reduce((acc, val) => acc.concat(val), [] as VocabularyWord[]);
+  }, [wordCache]);
 
-  const unlockBadge = useCallback((badgeId: string) => {
-    if (!earnedBadges.has(badgeId)) {
-        const badge = BADGES.find(b => b.id === badgeId);
-        if (badge) {
-            setEarnedBadges(prev => new Set(prev).add(badgeId));
-            setNewlyUnlockedBadge(badge);
-        }
-    }
+  // --- Effects ---
+
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('learnedWords', JSON.stringify(Array.from(learnedWords)));
+  }, [learnedWords]);
+  
+  useEffect(() => {
+    localStorage.setItem('masteredWords', JSON.stringify(Array.from(masteredWords)));
+  }, [masteredWords]);
+
+  useEffect(() => {
+    localStorage.setItem('userPoints', userPoints.toString());
+  }, [userPoints]);
+
+  useEffect(() => {
+    localStorage.setItem('unlockedLevels', JSON.stringify(unlockedLevels));
+  }, [unlockedLevels]);
+
+  useEffect(() => {
+    localStorage.setItem('globalUnlockedLevel', globalUnlockedLevel.toString());
+  }, [globalUnlockedLevel]);
+
+  useEffect(() => {
+    localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
   }, [earnedBadges]);
 
-  const checkAndAwardBadges = useCallback(() => {
-    if (learnedWords.size >= 10) unlockBadge('learner_1');
-    if (learnedWords.size >= 50) unlockBadge('learner_2');
-    if (learnedWords.size >= 200) unlockBadge('learner_3');
-    if (masteredWords.size >= 25) unlockBadge('mastery_1');
-    if (hasGeneratedAiCategory) unlockBadge('ai_pioneer');
-  }, [learnedWords.size, masteredWords.size, hasGeneratedAiCategory, unlockBadge]);
+  useEffect(() => {
+    localStorage.setItem('dailyGoal', JSON.stringify(dailyGoal));
+  }, [dailyGoal]);
 
   useEffect(() => {
-    checkAndAwardBadges();
-  }, [checkAndAwardBadges]);
-  
-  // Notification Scheduling
-  const scheduleNotification = useCallback(async () => { /* ... existing code ... */ }, [notificationsEnabled]);
-  useEffect(() => { /* ... existing service worker code ... */ }, [scheduleNotification]);
-  
-  // Handlers
-  const handleThemeToggle = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  const handleNotificationsToggle = async () => { /* ... existing code ... */ };
-  const handleMicrophoneToggle = () => setMicrophoneEnabled(prev => !prev);
-  const handleGoalChange = (newGoal: DailyGoal) => setDailyGoal(newGoal);
-  const handleSelectCategory = (category: Category) => { setSelectedCategory(category); setCurrentView('category'); };
+    localStorage.setItem('dailyProgress', JSON.stringify(dailyProgress));
+  }, [dailyProgress]);
 
-  const handleBack = () => {
-    interstitialTriggerCount.current += 1;
-    if (interstitialTriggerCount.current >= 3) {
-      showInterstitialAd();
-      interstitialTriggerCount.current = 0;
-    }
-    setCurrentView('dashboard');
-    setSelectedCategory(null);
-    setSearchQuery('');
-  };
+  // --- Handlers ---
 
-  const handleToggleLearned = useCallback((word: string) => {
+  const handleToggleLearned = (word: string) => {
     setLearnedWords(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(word)) {
-            newSet.delete(word);
-        } else {
-            newSet.add(word);
-            addPoints(POINTS.LEARN_WORD);
-            newlyLearnedCount.current += 1;
-            setDailyProgress(p => ({ ...p, wordsLearnedCount: p.wordsLearnedCount + 1 }));
-            if (newlyLearnedCount.current >= 20) {
-                showRewardAd(() => {});
-                newlyLearnedCount.current = 0;
-            }
-        }
-        return newSet;
+      const next = new Set(prev);
+      if (next.has(word)) {
+        next.delete(word);
+      } else {
+        next.add(word);
+        updateDailyProgress('words');
+        addPoints(POINTS.LEARN_WORD);
+      }
+      return next;
     });
-  }, [addPoints]);
-
-  const allWords = useMemo(() => Object.values(wordCache).flat(), [wordCache]);
-  const coreWords = useMemo(() => Object.values(VOCABULARY_DATA).flat(), []);
-
-  const handleStartQuiz = (wordsForQuiz?: VocabularyWord[], startLevel?: number) => {
-    const wordsToQuiz = wordsForQuiz || coreWords;
-    setQuizWords(wordsToQuiz);
-    setQuizTitle(wordsForQuiz ? (selectedCategory?.name || 'Category Quiz') : 'Master Quiz (All Words)');
-    setQuizStartLevel(startLevel || null);
-    setCurrentView('quiz');
   };
-  
-  const handleQuizComplete = (result: QuizCompletionResult) => {
-    const { correctlyAnsweredWords, score, totalQuestions } = result;
-    
-    setQuizScore(prev => prev + score);
-    addPoints(POINTS.COMPLETE_QUIZ);
-    if (totalQuestions > 0 && score === totalQuestions) {
-        addPoints(POINTS.PERFECT_QUIZ_BONUS);
-        setDailyProgress(p => ({ ...p, quizzesCompletedCount: p.quizzesCompletedCount + 1 }));
-        const newCount = quizCompletionCount + 1;
-        setQuizCompletionCount(newCount);
-        if (newCount >= 15) {
-          showRewardAd(() => {});
-          setQuizCompletionCount(0);
-        }
+
+  const updateDailyProgress = (type: 'words' | 'quizzes') => {
+    setDailyProgress(prev => {
+      const today = getTodayString();
+      if (prev.date !== today) {
+        return {
+          date: today,
+          wordsLearnedCount: type === 'words' ? 1 : 0,
+          quizzesCompletedCount: type === 'quizzes' ? 1 : 0
+        };
+      }
+      return {
+        ...prev,
+        wordsLearnedCount: type === 'words' ? prev.wordsLearnedCount + 1 : prev.wordsLearnedCount,
+        quizzesCompletedCount: type === 'quizzes' ? prev.quizzesCompletedCount + 1 : prev.quizzesCompletedCount
+      };
+    });
+  };
+
+  const addPoints = (points: number) => {
+    setUserPoints(prev => {
+        const newPoints = prev + points;
+        checkBadges(newPoints, learnedWords.size, masteredWords.size);
+        return newPoints;
+    });
+  };
+
+  const checkBadges = (points: number, learnedCount: number, masteredCount: number) => {
+    const newBadges: string[] = [];
+    BADGES.forEach(badge => {
+      if (earnedBadges.includes(badge.id)) return;
+
+      let earned = false;
+      if (badge.id === 'learner_1' && learnedCount >= 10) earned = true;
+      if (badge.id === 'learner_2' && learnedCount >= 50) earned = true;
+      if (badge.id === 'learner_3' && learnedCount >= 200) earned = true;
+      if (badge.id === 'mastery_1' && masteredCount >= 25) earned = true;
+      
+      if (earned) {
+        newBadges.push(badge.id);
+        setBadgeNotification(badge);
+      }
+    });
+
+    if (newBadges.length > 0) {
+      setEarnedBadges(prev => [...prev, ...newBadges]);
     }
-    
-    if (quizTitle === 'Master Quiz (All Words)') {
-      setMasteredWords(prev => new Set([...prev, ...correctlyAnsweredWords]));
-    }
-    setCurrentView('dashboard');
-    setQuizWords([]);
+  };
+
+  const handleSelectCategory = (category: Category) => {
+    setSearchQuery('');
+    setSelectedCategory(category);
+    setCurrentView('category');
+    // We remain in the home tab
+  };
+
+  const handleStartQuiz = (words: VocabularyWord[], title: string, startLevel: number = 1) => {
+    setQuizWords(words);
+    setQuizTitle(title);
+    setQuizStartLevel(startLevel);
+    setCurrentView('quiz');
   };
 
   const handleUnlockLevel = (categoryName: string, level: number) => {
-    setUnlockedLevels(prev => {
-        const currentUnlocked = prev[categoryName] || 1;
-        const newLevelValue = Math.max(currentUnlocked, level);
-        if (newLevelValue > currentUnlocked) {
-            setLevelUpNotification({ level: newLevelValue, categoryName });
-        }
-        return { ...prev, [categoryName]: newLevelValue };
+      setUnlockedLevels(prev => {
+          const current = prev[categoryName] || 1;
+          if (level > current) {
+              setLevelUpNotification({ level, categoryName });
+              return { ...prev, [categoryName]: level };
+          }
+          return prev;
+      });
+  };
+
+  const handleGlobalLevelUnlock = (categoryName: string, level: number) => {
+      if (level > globalUnlockedLevel) {
+          setLevelUpNotification({ level, categoryName: "Vocab Journey" });
+          setGlobalUnlockedLevel(level);
+      }
+  };
+
+  const handleQuizComplete = (result: QuizCompletionResult) => {
+    updateDailyProgress('quizzes');
+    addPoints(POINTS.COMPLETE_QUIZ);
+    if (result.score === result.totalQuestions && result.totalQuestions > 0) {
+      addPoints(POINTS.PERFECT_QUIZ_BONUS);
+    }
+    
+    setMasteredWords(prev => {
+      const next = new Set(prev);
+      result.correctlyAnsweredWords.forEach(word => next.add(word));
+      return next;
     });
   };
 
-  const handleQuizExit = () => { setCurrentView('dashboard'); setQuizWords([]); setQuizStartLevel(null); };
+  const handleLevelUpDismiss = () => {
+    setLevelUpNotification(null);
+  };
 
-  const filteredWords = useMemo(() => {
-    if (!searchQuery) return [];
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return allWords.filter(w => w.word.toLowerCase().includes(lowercasedQuery) || w.definition.toLowerCase().includes(lowercasedQuery) || w.example.toLowerCase().includes(lowercasedQuery));
-  }, [searchQuery, allWords]);
-
-  const handleGenerateCategory = async (topic: string) => {
+  const handleAiGenerate = async (topic: string) => {
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      const generatedWords = await getVocabularyForCategory(topic);
-      const newCategory: Category = { name: topic, emoji: '✨', color: 'bg-teal-500', textColor: 'text-white' };
-      setWordCache(prev => ({ ...prev, [topic]: generatedWords }));
-      if (!hasGeneratedAiCategory) setHasGeneratedAiCategory(true);
+      const newWords = await getVocabularyForCategory(topic);
+      
+      setWordCache(prev => ({
+        ...prev,
+        [topic]: newWords
+      }));
+
+      let category = categories.find(c => c.name.toLowerCase() === topic.toLowerCase());
+      if (!category) {
+        category = {
+            name: topic,
+            emoji: '✨',
+            color: 'bg-teal-500',
+            textColor: 'text-white'
+        };
+        setCategories(prev => [...prev, category!]);
+      }
+      
+      setSelectedCategory(category);
+      setCurrentView('category');
+      setActiveTab('home');
       addPoints(POINTS.GENERATE_CATEGORY);
-      handleSelectCategory(newCategory);
-      showRewardedInterstitialAd(() => {});
+
     } catch (error) {
-      setGenerationError((error as Error).message || 'An unknown error occurred.');
+      setGenerationError("Failed to generate words. Please try again.");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleNavigateToAiCreate = () => { if (!searchQuery) { setPreviousView(currentView); setCurrentView('ai_create'); } };
-  const handleShowDashboard = () => { setCurrentView('dashboard'); setIsSidebarOpen(false); };
-  const handleShowLeaderboard = () => { setCurrentView('leaderboard'); setIsSidebarOpen(false); };
-
-  const isBackButtonVisible = !['dashboard'].includes(currentView) && !searchQuery;
-
-  const onSwipeBack = useCallback(() => { if (currentView === 'quiz') handleQuizExit(); else handleBack(); }, [currentView, handleBack, handleQuizExit]);
-  const { handleTouchStart, handleTouchMove, handleTouchEnd, swipeStyles } = useSwipeBack({ onSwipeBack, enabled: isBackButtonVisible });
-  
-  const totalMasterQuizLevels = useMemo(() => {
-    return Math.ceil(coreWords.length / 20);
-  }, [coreWords]);
-
-  const renderContent = () => {
-    if (searchQuery) {
-      return (
-        <div className="p-4 sm:p-6">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Search Results for "{searchQuery}"</h2>
-            {filteredWords.length > 0 ? (<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">{filteredWords.map(word => <Flashcard key={word.word} wordData={word} isLearned={learnedWords.has(word.word)} onToggleLearned={handleToggleLearned} microphoneEnabled={microphoneEnabled} />)}</div>) : (<p>No words found.</p>)}
-        </div>
-      );
-    }
-    switch (currentView) {
-      case 'leaderboard': return <LeaderboardView userName={userName} userPoints={quizScore} />;
-      case 'ai_create': return <AiCreateView onGenerateCategory={handleGenerateCategory} isGenerating={isGenerating} generationError={generationError} />;
-      case 'quiz': {
-        const categoryName = selectedCategory?.name || 'master';
-        return (
-            <QuizView 
-                words={quizWords} 
-                onQuizComplete={handleQuizComplete} 
-                onQuizExit={handleQuizExit} 
-                title={quizTitle} 
-                categoryName={categoryName}
-                unlockedLevel={unlockedLevels[categoryName] || 1}
-                onUnlockLevel={handleUnlockLevel}
-                startAtLevel={quizStartLevel}
-            />
-        );
+  const handleBack = () => {
+      setSearchQuery('');
+      setIsQuizActive(false); // Reset quiz active state
+      
+      if (currentView === 'quiz') {
+          // Return to category view
+          if (selectedCategory) {
+            setCurrentView('category');
+          } else {
+            setCurrentView('dashboard');
+          }
+      } else if (currentView === 'category') {
+          setCurrentView('dashboard');
+      } else if (currentView === 'leaderboard') {
+          setCurrentView('dashboard');
       }
-      case 'category': return selectedCategory && <CategoryView category={selectedCategory} words={wordCache[selectedCategory.name] || []} learnedWords={learnedWords} onToggleLearned={handleToggleLearned} onStartQuiz={(words) => handleStartQuiz(words)} microphoneEnabled={microphoneEnabled} />;
-      default: return <Dashboard onSelectCategory={handleSelectCategory} onStartQuiz={() => handleStartQuiz()} wordCache={wordCache} learnedWords={learnedWords} masteredWords={masteredWords} totalWords={coreWords.length} dailyGoal={dailyGoal} dailyProgress={dailyProgress} userName={userName} userPoints={userPoints} />;
-    }
+      // If in quiz_journey (root of Quiz tab), handleBack typically opens menu or does nothing
+      if (currentView === 'quiz_journey') {
+          setIsSidebarOpen(true);
+      }
   };
-  
-  const getTitle = () => {
-    if (searchQuery) return "Search";
-    if (currentView === 'leaderboard') return "Leaderboard";
-    if (currentView === 'ai_create') return "Create with AI";
-    if (currentView === 'quiz') return "Quiz Time!";
-    if (currentView === 'category' && selectedCategory) return selectedCategory.name;
-    return "Essential Words";
-  }
+
+  const handleTabChange = (tab: 'home' | 'quiz' | 'ai') => {
+      setSearchQuery('');
+      setActiveTab(tab);
+      setIsQuizActive(false); // Reset quiz active state
+
+      if (tab === 'home') {
+          setCurrentView('dashboard');
+          setSelectedCategory(null);
+      } else if (tab === 'quiz') {
+          setCurrentView('quiz_journey');
+          setSelectedCategory(null);
+      } else if (tab === 'ai') {
+          setCurrentView('ai_create');
+          setSelectedCategory(null);
+      }
+  };
+
+  const filteredWords = useMemo(() => {
+    if (!searchQuery) return [];
+    const allWords = (Object.values(wordCache) as VocabularyWord[][]).reduce((acc, val) => acc.concat(val), [] as VocabularyWord[]);
+    return allWords.filter(w => 
+      w.word.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      w.definition.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, wordCache]);
+
+  const { handleTouchStart, handleTouchMove, handleTouchEnd, swipeStyles } = useSwipeBack({
+    onSwipeBack: handleBack,
+    enabled: (currentView === 'category' || currentView === 'quiz' || currentView === 'leaderboard') && !searchQuery
+  });
+
+  const showHeader = activeTab !== 'quiz';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
-      <LevelUpNotification notification={levelUpNotification} onDismiss={() => setLevelUpNotification(null)} />
-      <BadgeNotification badge={newlyUnlockedBadge} onDismiss={() => setNewlyUnlockedBadge(null)} />
-      <Sidebar
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        theme={theme}
-        onThemeToggle={handleThemeToggle}
-        notificationsEnabled={notificationsEnabled}
-        onNotificationsToggle={handleNotificationsToggle}
-        microphoneEnabled={microphoneEnabled}
-        onMicrophoneToggle={handleMicrophoneToggle}
-        dailyGoal={dailyGoal}
-        onGoalChange={handleGoalChange}
-        onShowDashboard={handleShowDashboard}
-        onShowLeaderboard={handleShowLeaderboard}
-        userQuizScore={quizScore}
-      />
-      <div className="flex flex-col h-screen">
-        <Header
-          showBackButton={isBackButtonVisible}
-          onBack={currentView === 'quiz' ? handleQuizExit : handleBack}
+    <div 
+      className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={swipeStyles}
+    >
+      {showHeader && (
+        <Header 
+          showBackButton={currentView !== 'dashboard' && currentView !== 'quiz_journey' && currentView !== 'ai_create'}
+          onBack={handleBack}
           onMenu={() => setIsSidebarOpen(true)}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          title={getTitle()}
+          title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : 'Daily Vocab')}
           showSearchBar={currentView === 'dashboard'}
+          userName={userName}
         />
-        <main className="flex-1 overflow-y-auto" style={swipeStyles} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>{renderContent()}</main>
-        <BannerAd />
-      </div>
-      {!searchQuery && currentView === 'dashboard' && (<button onClick={handleNavigateToAiCreate} className="fixed bottom-20 right-6 bg-gradient-to-br from-teal-400 to-primary-600 text-white px-5 py-3 rounded-full shadow-lg hover:scale-110 transition-transform duration-300 z-30 focus:outline-none focus:ring-4 focus:ring-teal-300 flex items-center space-x-2" aria-label="Create with AI"><SparklesIcon className="h-6 w-6" /> <span className="font-semibold text-lg">AI</span></button>)}
+      )}
+
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        theme={theme}
+        onThemeToggle={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
+        notificationsEnabled={notificationsEnabled}
+        onNotificationsToggle={() => setNotificationsEnabled(!notificationsEnabled)}
+        microphoneEnabled={microphoneEnabled}
+        onMicrophoneToggle={() => {
+            if (!microphoneEnabled) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+                    setMicrophoneEnabled(true);
+                }).catch(() => {
+                    alert("Could not access microphone.");
+                });
+            } else {
+                setMicrophoneEnabled(false);
+            }
+        }}
+        dailyGoal={dailyGoal}
+        onGoalChange={setDailyGoal}
+        onShowDashboard={() => {
+            setCurrentView('dashboard');
+            setActiveTab('home');
+            setIsSidebarOpen(false);
+        }}
+        onShowLeaderboard={() => {
+            setCurrentView('leaderboard');
+            setActiveTab('home');
+            setIsSidebarOpen(false);
+        }}
+        userQuizScore={userPoints}
+      />
+
+      <main className={`container mx-auto max-w-5xl ${activeTab === 'quiz' || isQuizActive ? '' : 'pb-20'} min-h-screen`}>
+        {searchQuery ? (
+          <div className="p-4">
+             <h2 className="text-xl font-bold mb-4 dark:text-white">Search Results</h2>
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+               {filteredWords.map(word => (
+                 <div key={word.word} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                    <h3 className="font-bold text-lg dark:text-white">{word.word}</h3>
+                    <p className="text-gray-600 dark:text-gray-300">{word.definition}</p>
+                 </div>
+               ))}
+               {filteredWords.length === 0 && <p className="text-gray-500">No words found.</p>}
+             </div>
+          </div>
+        ) : (
+          <>
+            {currentView === 'dashboard' && (
+              <Dashboard 
+                categories={categories}
+                onSelectCategory={handleSelectCategory}
+                wordCache={wordCache}
+                learnedWords={learnedWords}
+                masteredWords={masteredWords}
+                totalWords={(Object.values(wordCache) as VocabularyWord[][]).reduce((acc, words) => acc + words.length, 0)}
+                dailyGoal={dailyGoal}
+                dailyProgress={dailyProgress}
+                userName={userName}
+                userPoints={userPoints}
+              />
+            )}
+
+            {currentView === 'category' && selectedCategory && (
+              <CategoryView 
+                category={selectedCategory}
+                words={wordCache[selectedCategory.name] || []}
+                learnedWords={learnedWords}
+                onToggleLearned={handleToggleLearned}
+                onStartQuiz={(words) => handleStartQuiz(words, selectedCategory.name, unlockedLevels[selectedCategory.name] || 1)}
+                microphoneEnabled={microphoneEnabled}
+              />
+            )}
+
+            {currentView === 'quiz' && (
+              <QuizView 
+                words={quizWords} 
+                onQuizComplete={handleQuizComplete} 
+                onQuizExit={handleBack}
+                title={quizTitle}
+                categoryName={selectedCategory?.name || 'Quiz'}
+                unlockedLevel={selectedCategory ? (unlockedLevels[selectedCategory.name] || 1) : 1}
+                onUnlockLevel={handleUnlockLevel}
+                startAtLevel={quizStartLevel}
+                onQuizStatusChange={setIsQuizActive}
+              />
+            )}
+
+            {currentView === 'quiz_journey' && (
+              <QuizView
+                words={allJourneyWords}
+                onQuizComplete={handleQuizComplete}
+                onQuizExit={() => setIsSidebarOpen(true)}
+                title="Vocab Journey"
+                categoryName="Vocab Journey"
+                unlockedLevel={globalUnlockedLevel}
+                onUnlockLevel={handleGlobalLevelUnlock}
+                onQuizStatusChange={setIsQuizActive}
+                // No startAtLevel prop, let it resume from unlock level
+              />
+            )}
+
+            {currentView === 'ai_create' && (
+                <AiCreateView 
+                    onGenerateCategory={handleAiGenerate}
+                    isGenerating={isGenerating}
+                    generationError={generationError}
+                />
+            )}
+
+            {currentView === 'leaderboard' && (
+              <LeaderboardView userName={userName} userPoints={userPoints} />
+            )}
+          </>
+        )}
+      </main>
+
+      {!isQuizActive && (
+        <BottomNavigation 
+          currentTab={activeTab} 
+          onTabChange={handleTabChange} 
+          onOpenSettings={() => setIsSidebarOpen(true)}
+        />
+      )}
+
+      <BadgeNotification 
+        badge={badgeNotification} 
+        onDismiss={() => setBadgeNotification(null)} 
+      />
+
+      <LevelUpNotification 
+        notification={levelUpNotification}
+        onDismiss={handleLevelUpDismiss}
+      />
     </div>
   );
 };

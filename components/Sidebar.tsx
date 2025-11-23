@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { CloseIcon, SunIcon, MoonIcon, BellIcon, YouTubeIcon, FacebookIcon, LeaderboardIcon, MicrophoneIcon, LockIcon, CheckCircleIconSolid } from './icons';
 import { DailyGoal } from '../types';
@@ -26,7 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onThemeToggle, 
   notificationsEnabled, 
   onNotificationsToggle,
-  microphoneEnabled,
+  microphoneEnabled, 
   onMicrophoneToggle,
   dailyGoal,
   onGoalChange,
@@ -34,17 +35,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   onShowLeaderboard,
   userQuizScore,
 }) => {
-  const goalOptions = [5, 10, 15, 20, 30, 50];
+  const goalOptions = [10, 20, 30, 40, 50];
   const currentTier = TIERS.slice().reverse().find(tier => userQuizScore >= tier.minPoints) || TIERS[0];
 
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-black bg-opacity-50 z-[55] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       ></div>
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]`}
+        className={`fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-800 shadow-xl z-[60] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]`}
       >
         <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Settings</h2>
@@ -109,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 id="goalType"
                 value={dailyGoal.type}
                 onChange={(e) => onGoalChange({ ...dailyGoal, type: e.target.value as 'words' | 'quizzes' })}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
               >
                 <option value="words">Learn New Words</option>
                 <option value="quizzes">Complete Quizzes</option>
@@ -121,7 +122,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 id="goalValue"
                 value={dailyGoal.value}
                 onChange={(e) => onGoalChange({ ...dailyGoal, value: parseInt(e.target.value, 10) })}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
               >
                 {goalOptions.map(option => (
                   <option key={option} value={option}>{option} {dailyGoal.type === 'words' ? 'Words' : 'Quizzes'}</option>

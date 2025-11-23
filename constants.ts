@@ -2,19 +2,33 @@
 import { Category, VocabularyWord } from './types';
 
 export const CATEGORIES: Category[] = [
-  { name: 'Travel & Tourism', emoji: '✈️', color: 'bg-blue-500', textColor: 'text-white' },
-  { name: 'Food & Dining', emoji: '🍽️', color: 'bg-red-500', textColor: 'text-white' },
-  { name: 'Education & Classroom', emoji: '🏫', color: 'bg-yellow-500', textColor: 'text-gray-800' },
-  { name: 'Workplace & Office', emoji: '💼', color: 'bg-gray-700', textColor: 'text-white' },
-  { name: 'Home & Household', emoji: '🏠', color: 'bg-green-500', textColor: 'text-white' },
-  { name: 'Shopping & Money', emoji: '🛍️', color: 'bg-pink-500', textColor: 'text-white' },
-  { name: 'Health & Body', emoji: '🏥', color: 'bg-indigo-500', textColor: 'text-white' },
-  { name: 'Time & Weather', emoji: '⏰', color: 'bg-cyan-500', textColor: 'text-white' },
-  { name: 'Feelings & Personality', emoji: '😊', color: 'bg-purple-500', textColor: 'text-white' },
-  { name: 'People & Social Life', emoji: '🧑‍🤝‍🧑', color: 'bg-orange-500', textColor: 'text-white' },
+  { name: 'Literature', emoji: '📚', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Science', emoji: '🔬', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Travel', emoji: '🌍', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Technology', emoji: '⚙️', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Emotions', emoji: '❤️', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Food', emoji: '👨‍🍳', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Conversation', emoji: '💬', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Time', emoji: '⏰', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Art', emoji: '🎨', color: 'bg-white', textColor: 'text-gray-900' },
+  { name: 'Finance', emoji: '💰', color: 'bg-white', textColor: 'text-gray-900' },
 ];
 
-export const VOCABULARY_DATA: Record<string, VocabularyWord[]> = {
+// Mapping old data keys to new category names
+const DATA_MAPPING = {
+  'Travel & Tourism': 'Travel',
+  'Food & Dining': 'Food',
+  'Education & Classroom': 'Literature',
+  'Workplace & Office': 'Technology',
+  'Home & Household': 'Art', // Best available slot for unused data, though imperfect
+  'Shopping & Money': 'Finance',
+  'Health & Body': 'Science', // Best available slot
+  'Time & Weather': 'Time',
+  'Feelings & Personality': 'Emotions',
+  'People & Social Life': 'Conversation',
+};
+
+const RAW_VOCABULARY_DATA: Record<string, VocabularyWord[]> = {
   'Travel & Tourism': [
     { word: "arrive (v.)", definition: "to reach a place", example: "We arrived at the hotel late at night." },
     { word: "depart (v.)", definition: "to leave a place", example: "The train departs at 8:30 a.m." },
@@ -1036,3 +1050,12 @@ export const VOCABULARY_DATA: Record<string, VocabularyWord[]> = {
     { word: "generation (noun)", definition: "all of the people born and living at about the same time", example: "The older generation often has different values from the younger generation." }
   ]
 };
+
+// Rebuild VOCABULARY_DATA with new keys and potentially migrated content
+export const VOCABULARY_DATA: Record<string, VocabularyWord[]> = Object.fromEntries(
+  Object.entries(RAW_VOCABULARY_DATA).map(([key, value]) => {
+    // @ts-ignore
+    const newKey = DATA_MAPPING[key];
+    return [newKey, value];
+  })
+);
