@@ -35,7 +35,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onShowLeaderboard,
   userQuizScore,
 }) => {
-  const goalOptions = [10, 20, 30, 40, 50];
   const currentTier = TIERS.slice().reverse().find(tier => userQuizScore >= tier.minPoints) || TIERS[0];
 
   return (
@@ -100,37 +99,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             </li>
           </ul>
         </nav>
-
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Daily Goal</h3>
-          <div className="space-y-2">
-            <div>
-              <label htmlFor="goalType" className="text-sm font-medium text-gray-700 dark:text-gray-300">Goal Type</label>
-              <select 
-                id="goalType"
-                value={dailyGoal.type}
-                onChange={(e) => onGoalChange({ ...dailyGoal, type: e.target.value as 'words' | 'quizzes' })}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
-              >
-                <option value="words">Learn New Words</option>
-                <option value="quizzes">Complete Quizzes</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="goalValue" className="text-sm font-medium text-gray-700 dark:text-gray-300">Target</label>
-              <select 
-                id="goalValue"
-                value={dailyGoal.value}
-                onChange={(e) => onGoalChange({ ...dailyGoal, value: parseInt(e.target.value, 10) })}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base text-black dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md bg-white dark:bg-gray-700"
-              >
-                {goalOptions.map(option => (
-                  <option key={option} value={option}>{option} {dailyGoal.type === 'words' ? 'Words' : 'Quizzes'}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
 
         <nav className="p-4">
           <ul>

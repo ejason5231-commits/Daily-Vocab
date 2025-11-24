@@ -63,7 +63,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">Learn & Explore</h2>
       </div>
       
-      <div className="mb-8 animate-fade-in-up">
+      <div className="mb-8 mt-4 animate-fade-in-up">
         <UserStats 
           userName={userName}
           userPoints={userPoints}

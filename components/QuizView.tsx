@@ -4,7 +4,9 @@ import { VocabularyWord } from '../types';
 import { 
     LockIcon, CloudIcon, StarIcon, OwlIcon, BackIcon, SaveIcon, 
     CoinIcon, MountainIcon, TreeIcon, CastleIcon, PlayIcon,
-    RuinsIcon, RiverIcon, GrassIcon, MapLocationIcon
+    RuinsIcon, RiverIcon, GrassIcon, MapLocationIcon, 
+    LiteratureIcon, ScienceIcon, TravelIcon, WorkIcon, 
+    EmotionsIcon, FoodIcon, SocialIcon, TimeIcon, ArtIcon, FinanceIcon
 } from './icons';
 
 interface QuizCompletionResult {
@@ -23,6 +25,9 @@ interface QuizViewProps {
   onUnlockLevel: (category: string, level: number) => void;
   startAtLevel?: number | null;
   onQuizStatusChange?: (isActive: boolean) => void;
+  userPoints?: number;
+  userCoins?: number;
+  onCorrectAnswer?: () => void;
 }
 
 interface Question {
@@ -97,7 +102,10 @@ const QuizView: React.FC<QuizViewProps> = ({
   unlockedLevel, 
   onUnlockLevel, 
   startAtLevel,
-  onQuizStatusChange
+  onQuizStatusChange,
+  userPoints = 0,
+  userCoins = 0,
+  onCorrectAnswer
 }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -195,6 +203,8 @@ const QuizView: React.FC<QuizViewProps> = ({
     
     if (isCorrect) {
       setScore(prev => prev + 1);
+      // Trigger live update of XP
+      if (onCorrectAnswer) onCorrectAnswer();
       setCorrectlyAnsweredInSession(prev => new Set(prev).add(questions[currentQuestionIndex].correctAnswer));
       const messages = ["Awesome!", "Great job!", "You got it!", "Correct!", "Superb!"];
       setMascotMessage(messages[Math.floor(Math.random() * messages.length)]);
@@ -314,7 +324,7 @@ const QuizView: React.FC<QuizViewProps> = ({
 
     // Decor Elements
     const decorations = points.map((p, i) => {
-        const type = (i * 7) % 5; 
+        const type = (i * 7) % 11; 
         const side = i % 2 === 0 ? 'left' : 'right';
         const xPos = side === 'left' ? Math.max(8, p.x - 35) : Math.min(92, p.x + 35);
         return { type, x: xPos, y: p.y, id: i };
@@ -338,11 +348,11 @@ const QuizView: React.FC<QuizViewProps> = ({
                 <div className="flex items-center space-x-3">
                     <div className="flex items-center bg-[#5d4037] text-[#ffd700] px-3 py-1.5 rounded-xl border-2 border-[#8d6e63] shadow-sm">
                         <CoinIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5" />
-                        <span className="font-bold text-sm">{score * 10}</span>
+                        <span className="font-bold text-sm">{userCoins}</span>
                     </div>
                     <div className="flex items-center bg-[#5d4037] text-[#4fc3f7] px-3 py-1.5 rounded-xl border-2 border-[#8d6e63] shadow-sm">
                         <StarIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-1.5 text-[#29b6f6]" />
-                        <span className="font-bold text-sm">XP {score * 5}</span>
+                        <span className="font-bold text-sm">XP {userPoints}</span>
                     </div>
                 </div>
             </div>
@@ -391,24 +401,24 @@ const QuizView: React.FC<QuizViewProps> = ({
                         />
                     </svg>
 
-                    {/* Decorations */}
+                    {/* Decorations - 3D Landmarks */}
                     {decorations.map(d => (
                         <div 
                             key={d.id} 
                             className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform hover:scale-110"
                             style={{ left: `${d.x}%`, top: `${d.y}px`, zIndex: 5 }}
                         >
-                            {d.type === 0 && <TreeIcon className="w-16 h-16 text-[#4ade80] drop-shadow-md" />}
-                            {d.type === 1 && <MountainIcon className="w-20 h-16 text-[#94a3b8] drop-shadow-md" />}
-                            {d.type === 2 && <RuinsIcon className="w-16 h-16 text-[#a8a29e] drop-shadow-md" />}
-                            {d.type === 3 && <GrassIcon className="w-10 h-10 text-[#22c55e]" />}
-                            {d.type === 4 && <CloudIcon className="w-16 h-10 text-white opacity-80" />}
-                            
-                            {d.id === totalLevels - 1 && (
-                                <div className="absolute top-[-40px]">
-                                     <CastleIcon className="w-28 h-28 text-[#64748b] drop-shadow-xl" />
-                                </div>
-                            )}
+                            {d.type === 0 && <LiteratureIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 1 && <TreeIcon className="w-16 h-16 text-[#4ade80] drop-shadow-md" />}
+                            {d.type === 2 && <MountainIcon className="w-20 h-16 text-[#94a3b8] drop-shadow-md" />}
+                            {d.type === 3 && <ScienceIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 4 && <CastleIcon className="w-16 h-16 text-[#64748b] drop-shadow-xl" />}
+                            {d.type === 5 && <TravelIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 6 && <RuinsIcon className="w-16 h-16 text-[#a8a29e] drop-shadow-md" />}
+                            {d.type === 7 && <FoodIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 8 && <TimeIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 9 && <ArtIcon className="w-16 h-16 drop-shadow-lg" />}
+                            {d.type === 10 && <CloudIcon className="w-16 h-10 text-white opacity-80" />}
                         </div>
                     ))}
 
@@ -517,7 +527,7 @@ const QuizView: React.FC<QuizViewProps> = ({
             Level {currentLevel}
         </div>
         <div className="bg-white/30 px-4 py-1 rounded-full text-white font-bold backdrop-blur-sm flex items-center">
-            <StarIcon className="h-5 w-5 mr-1 text-yellow-300" /> {score}
+            <StarIcon className="h-5 w-5 mr-1 text-yellow-300" /> XP {userPoints}
         </div>
       </div>
 
