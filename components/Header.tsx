@@ -1,30 +1,39 @@
-import React from 'react';
-import { MenuIcon, BackIcon, SearchIcon, DailyVocabLogo, ProfileIcon } from './icons';
+
+import React, { useState } from 'react';
+import { MenuIcon, BackIcon, DailyVocabLogo, ProfileIcon, SparklesIcon } from './icons';
 
 interface HeaderProps {
   showBackButton: boolean;
   onBack: () => void;
   onMenu: () => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   title: string;
-  showSearchBar: boolean;
+  showAiBar: boolean;
   userName?: string;
+  onAiGenerate: (topic: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   showBackButton, 
   onBack, 
   onMenu, 
-  searchQuery, 
-  onSearchChange, 
   title, 
-  showSearchBar,
-  userName = "Learner"
+  showAiBar,
+  userName = "Learner",
+  onAiGenerate
 }) => {
+  const [aiInput, setAiInput] = useState('');
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (aiInput.trim()) {
+      onAiGenerate(aiInput.trim());
+      setAiInput('');
+    }
+  };
+
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-40 pt-[env(safe-area-inset-top)] shadow-sm">
-      <div className="container mx-auto px-4 py-2 flex items-center justify-between h-16">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 fixed top-0 left-0 right-0 z-40 pt-[env(safe-area-inset-top)] shadow-sm transition-all duration-300">
+      <div className="container mx-auto px-4 py-2 flex items-center justify-between h-14 sm:h-16">
         
         {/* Left Section */}
         <div className="flex items-center space-x-3">
@@ -54,21 +63,23 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Right Section */}
         <div className="flex items-center space-x-2">
-          {showSearchBar && (
-            <div className="hidden sm:block w-48 lg:w-64 mr-2">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 border border-gray-200 rounded-full bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white dark:focus:bg-gray-800 transition-all"
-                />
-              </div>
-            </div>
+          {showAiBar && (
+            <form onSubmit={handleGenerate} className="hidden sm:flex w-64 lg:w-80 mr-2 relative items-center">
+              <input
+                type="text"
+                placeholder="Topic (e.g. Space)..."
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                className="w-full pl-4 pr-20 py-1.5 border border-gray-200 rounded-full bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white dark:focus:bg-gray-800 transition-all"
+              />
+              <button 
+                type="submit"
+                className="absolute right-1 top-1 bottom-1 px-3 bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold rounded-full transition-colors flex items-center"
+              >
+                <SparklesIcon className="w-3 h-3 mr-1" />
+                Generate
+              </button>
+            </form>
           )}
           
           <button 
@@ -81,21 +92,25 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
       
-      {/* Mobile Search Bar (visible only on small screens when search is enabled) */}
-      {showSearchBar && (
-        <div className="sm:hidden px-4 pb-2">
-           <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon className="h-4 w-4 text-gray-400" />
-                </div>
+      {/* Mobile AI Bar (visible only on small screens when AI bar is enabled) */}
+      {showAiBar && (
+        <div className="sm:hidden px-4 pb-1">
+           <form onSubmit={handleGenerate} className="relative flex items-center">
                 <input
                   type="text"
-                  placeholder="Search words..."
-                  value={searchQuery}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white dark:focus:bg-gray-800 shadow-inner transition-all"
+                  placeholder="Enter topic..."
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="w-full pl-4 pr-24 py-2 border border-gray-200 rounded-xl bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:bg-white dark:focus:bg-gray-800 shadow-inner transition-all"
                 />
-            </div>
+                <button 
+                  type="submit"
+                  className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-teal-500 hover:bg-teal-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center shadow-sm"
+                >
+                   <SparklesIcon className="w-3 h-3 mr-1" />
+                   Generate
+                </button>
+            </form>
         </div>
       )}
     </header>
