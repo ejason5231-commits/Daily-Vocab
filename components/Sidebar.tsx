@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { CloseIcon, SunIcon, MoonIcon, BellIcon, YouTubeIcon, FacebookIcon, LeaderboardIcon, MicrophoneIcon, LockIcon, CheckCircleIconSolid } from './icons';
+import { CloseIcon, SunIcon, MoonIcon, BellIcon, MicrophoneIcon, LeaderboardIcon, ProfileIcon, DailyVocabLogo, YouTubeIcon, FacebookIcon } from './icons';
 import { DailyGoal } from '../types';
-import { TIERS } from '../gamificationConstants';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,11 +12,15 @@ interface SidebarProps {
   onNotificationsToggle: () => void;
   microphoneEnabled: boolean;
   onMicrophoneToggle: () => void;
-  dailyGoal: DailyGoal;
-  onGoalChange: (newGoal: DailyGoal) => void;
   onShowDashboard: () => void;
   onShowLeaderboard: () => void;
   userQuizScore: number;
+  dailyGoal: DailyGoal;
+  onGoalChange: (goal: DailyGoal) => void;
+  isLoggedIn: boolean;
+  userName: string;
+  onLoginClick: () => void;
+  onLogoutClick: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -29,143 +32,150 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNotificationsToggle,
   microphoneEnabled, 
   onMicrophoneToggle,
-  dailyGoal,
-  onGoalChange,
   onShowDashboard,
   onShowLeaderboard,
-  userQuizScore,
+  isLoggedIn,
+  userName,
+  onLoginClick,
+  onLogoutClick
 }) => {
-  const currentTier = TIERS.slice().reverse().find(tier => userQuizScore >= tier.minPoints) || TIERS[0];
-
   return (
     <>
-      <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[55] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
-      ></div>
-      <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white dark:bg-gray-800 shadow-xl z-[60] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col overflow-y-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]`}
-      >
-        <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Settings</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
-            <CloseIcon className="h-6 w-6" />
-          </button>
-        </div>
-        
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Your Rank</h3>
-          <ul className="space-y-1">
-            {TIERS.map(tier => {
-              const isUnlocked = userQuizScore >= tier.minPoints;
-              const isCurrent = tier.name === currentTier.name;
-              const isCompleted = isUnlocked && !isCurrent;
+      />
 
-              return (
-                <li key={tier.name}>
+      {/* Sidebar Panel */}
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white dark:bg-gray-800 shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        
+        {/* Absolute Close Button */}
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors z-20"
+          aria-label="Close Sidebar"
+        >
+          <CloseIcon className="w-6 h-6" />
+        </button>
+
+        <div className="flex flex-col h-full">
+          
+          <div className="flex-1 overflow-y-auto p-5 pt-12 space-y-6">
+            
+            {/* Login / Profile Section */}
+            <div className="bg-blue-50 dark:bg-gray-700/50 rounded-2xl p-4 border border-blue-100 dark:border-gray-600">
+              {isLoggedIn ? (
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-teal-400 to-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-md">
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Hi, {userName}!</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Ready to learn?</p>
                   <button 
-                    onClick={isUnlocked ? onShowDashboard : undefined}
-                    disabled={!isUnlocked}
-                    className={`w-full flex items-center text-left p-2 rounded-md transition-all duration-200 ${
-                      isCurrent
-                        ? 'bg-primary-100 dark:bg-primary-900/50 ring-2 ring-primary-500 scale-105 shadow-md'
-                        : isCompleted
-                        ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        : 'text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70'
-                    }`}
+                    onClick={onLogoutClick}
+                    className="w-full py-2 px-4 bg-white dark:bg-gray-800 text-red-500 font-semibold rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center text-xl mr-2">
-                      {isCompleted ? <CheckCircleIconSolid className="h-6 w-6 text-green-500" /> : tier.emoji}
-                    </div>
-                    <div className="flex-grow">
-                      <span className={`font-semibold ${isCurrent ? 'text-primary-700 dark:text-primary-300' : ''}`}>{tier.name}</span>
-                      <span className="text-xs ml-2 text-gray-500 dark:text-gray-400">{tier.rangeText}</span>
-                    </div>
-                    {!isUnlocked && <LockIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />}
+                    Log Out
                   </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        
-        <nav className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <ul>
-            <li className="mb-2">
-              <button onClick={onShowLeaderboard} className="w-full flex items-center text-left p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <LeaderboardIcon className="h-5 w-5 mr-3" />
-                <span>Leaderboard</span>
-              </button>
-            </li>
-          </ul>
-        </nav>
-
-        <nav className="p-4">
-          <ul>
-              <li className="mb-2">
-              <div className="flex items-center justify-between p-2">
-                <span className="text-gray-700 dark:text-gray-300 flex items-center"><BellIcon className="h-5 w-5 mr-3" /> Notifications</span>
-                <button 
-                  onClick={onNotificationsToggle} 
-                  className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800 ${notificationsEnabled ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`}
-                >
-                  <span className={`inline-block w-4 h-4 transform transition-transform duration-300 rounded-full bg-white ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-            </li>
-            <li className="mb-2">
-              <div className="flex items-center justify-between p-2">
-                <span className="text-gray-700 dark:text-gray-300 flex items-center"><MicrophoneIcon className="h-5 w-5 mr-3" /> Microphone</span>
-                <button 
-                  onClick={onMicrophoneToggle} 
-                  className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800 ${microphoneEnabled ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`}
-                >
-                  <span className={`inline-block w-4 h-4 transform transition-transform duration-300 rounded-full bg-white ${microphoneEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-            </li>
-              <li className="mb-2">
-              <div className="flex items-center justify-between p-2">
-                <span className="text-gray-700 dark:text-gray-300">Theme</span>
-                <button onClick={onThemeToggle} className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-gray-800 bg-gray-200 dark:bg-gray-600">
-                  <span className={`inline-block w-4 h-4 transform transition-transform duration-300 rounded-full bg-white dark:bg-gray-800 shadow-sm flex items-center justify-center ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`}>
-                      {theme === 'dark' ? <MoonIcon className="h-3 w-3 text-white"/> : <SunIcon className="h-3 w-3 text-yellow-500" />}
-                  </span>
-                </button>
-              </div>
-            </li>
-            <li className="border-t border-gray-200 dark:border-gray-700 my-2"></li>
-            <li className="mb-2">
-              <button className="w-full text-left p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Check for Updates</button>
-            </li>
-          </ul>
-        </nav>
-        <div className="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">About</h3>
-          <div className="space-y-3">
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-              Created by <span className="font-semibold text-gray-700 dark:text-gray-300">Eric Jason</span>
-            </p>
-            <div className="space-y-2">
-              <a 
-                href="https://www.youtube.com/@LearnEngwithEric" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-              >
-                <YouTubeIcon className="h-6 w-6 text-red-600" />
-                <span className="text-sm font-medium">YouTube Channel</span>
-              </a>
-              <a 
-                href="https://facebook.com/LearnEngwithEric" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex items-center space-x-3 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-              >
-                <FacebookIcon className="h-6 w-6 text-blue-600" />
-                <span className="text-sm font-medium">Facebook Page</span>
-              </a>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center text-center">
+                   <DailyVocabLogo className="w-12 h-12 mb-2" />
+                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Join Daily Vocab</h3>
+                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Save your progress and compete on the leaderboard!</p>
+                   <button 
+                    onClick={() => { onClose(); onLoginClick(); }}
+                    className="w-full py-2.5 px-4 bg-primary-600 text-white font-bold rounded-xl shadow-lg hover:bg-primary-700 transition-colors"
+                   >
+                     Log In / Sign Up
+                   </button>
+                </div>
+              )}
             </div>
+
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-2"></div>
+
+            {/* Appearance */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Preferences</h3>
+              <div className="space-y-2">
+                <button 
+                  onClick={onThemeToggle}
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-full ${theme === 'dark' ? 'bg-indigo-100 text-indigo-600' : 'bg-orange-100 text-orange-500'}`}>
+                      {theme === 'dark' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-200">Dark Mode</span>
+                  </div>
+                  <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${theme === 'dark' ? 'bg-primary-600' : 'bg-gray-300'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={onNotificationsToggle}
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-full bg-red-100 text-red-500">
+                      <BellIcon className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-200">Notifications</span>
+                  </div>
+                   <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${notificationsEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${notificationsEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </div>
+                </button>
+                
+                 <button 
+                  onClick={onMicrophoneToggle}
+                  className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-full bg-blue-100 text-blue-500">
+                      <MicrophoneIcon className="w-5 h-5" />
+                    </div>
+                    <span className="font-medium text-gray-700 dark:text-gray-200">Microphone</span>
+                  </div>
+                   <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${microphoneEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${microphoneEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Navigation Links */}
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Navigation</h3>
+              <div className="space-y-2">
+                <button 
+                  onClick={onShowLeaderboard}
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-200"
+                >
+                  <div className="p-2 rounded-full bg-yellow-100 text-yellow-600">
+                    <LeaderboardIcon className="w-5 h-5" />
+                  </div>
+                  <span className="font-medium">Leaderboard</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+          
+          <div className="p-4 border-t border-gray-100 dark:border-gray-700 text-center">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Follow on</h3>
+            <div className="flex justify-center space-x-6 mb-4">
+              <button className="text-gray-400 hover:text-[#FF0000] transition-colors transform hover:scale-110">
+                <YouTubeIcon className="w-8 h-8" />
+              </button>
+              <button className="text-gray-400 hover:text-[#1877F2] transition-colors transform hover:scale-110">
+                <FacebookIcon className="w-7 h-7" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">Daily Vocab v1.0 by Eric App Dev</p>
           </div>
         </div>
       </div>

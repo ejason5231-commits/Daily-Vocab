@@ -10,6 +10,7 @@ import LeaderboardView from './components/LeaderboardView';
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
+import LoginModal from './components/LoginModal'; // Added Import
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
 import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
@@ -31,8 +32,9 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'ai'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // Login Modal State
 
-  // Settings State
+  // Settings & User State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const stored = window.localStorage.getItem('theme');
@@ -44,6 +46,7 @@ const App: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [userName, setUserName] = useState("Learner");
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Login State
 
   // Data State
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
@@ -161,6 +164,19 @@ const App: React.FC = () => {
   }, [dailyProgress]);
 
   // --- Handlers ---
+
+  const handleLogin = (name: string) => {
+    setUserName(name);
+    setIsLoggedIn(true);
+    setIsLoginModalOpen(false);
+    // In a real app, you would fetch user data here
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUserName("Learner");
+    setIsSidebarOpen(false);
+  };
 
   const handleToggleLearned = (word: string) => {
     const isAlreadyLearned = learnedWords.has(word);
@@ -375,6 +391,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden">
       
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+        onLogin={handleLogin} 
+      />
+
       {/* Sidebar - Fixed Overlay */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -408,6 +431,10 @@ const App: React.FC = () => {
             setIsSidebarOpen(false);
         }}
         userQuizScore={userPoints}
+        isLoggedIn={isLoggedIn}
+        userName={userName}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+        onLogoutClick={handleLogout}
       />
 
       {/* Global Header - Fixed Top (Outside swipe container) */}
@@ -415,7 +442,7 @@ const App: React.FC = () => {
         <Header 
           showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create'}
           onBack={handleBack}
-          onMenu={() => setIsSidebarOpen(true)}
+          onMenu={() => setIsLoginModalOpen(true)} // Profile icon opens Login Modal directly
           title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : 'Daily Vocab')}
           showAiBar={currentView === 'dashboard'}
           userName={userName}
