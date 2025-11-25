@@ -7,15 +7,17 @@ import CategoryView from './components/CategoryView';
 import QuizView from './components/QuizView';
 import AiCreateView from './components/AiCreateView';
 import LeaderboardView from './components/LeaderboardView';
+import ProfileView from './components/ProfileView'; // Added Import
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
-import LoginModal from './components/LoginModal'; // Added Import
+import LoginModal from './components/LoginModal'; 
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
 import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
+import { SparklesIcon } from './components/icons';
 
 interface QuizCompletionResult {
   correctlyAnsweredWords: string[];
@@ -27,12 +29,12 @@ const getTodayString = () => new Date().toISOString().split('T')[0];
 
 const App: React.FC = () => {
   // Navigation State
-  const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey' | 'profile'>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'ai'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'profile'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); // Login Modal State
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
 
   // Settings & User State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -45,8 +47,13 @@ const App: React.FC = () => {
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
-  const [userName, setUserName] = useState("Learner");
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Login State
+  const [userName, setUserName] = useState(() => {
+    return window.localStorage.getItem('userName') || "Learner";
+  });
+  const [profileImage, setProfileImage] = useState<string | null>(() => {
+    return window.localStorage.getItem('profileImage');
+  });
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
   // Data State
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
@@ -138,6 +145,18 @@ const App: React.FC = () => {
     document.documentElement.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('userName', userName);
+  }, [userName]);
+
+  useEffect(() => {
+    if (profileImage) {
+      localStorage.setItem('profileImage', profileImage);
+    } else {
+      localStorage.removeItem('profileImage');
+    }
+  }, [profileImage]);
 
   useEffect(() => {
     localStorage.setItem('learnedWords', JSON.stringify(Array.from(learnedWords)));
@@ -409,10 +428,12 @@ const App: React.FC = () => {
           setCurrentView('dashboard');
       } else if (currentView === 'leaderboard') {
           setCurrentView('dashboard');
+      } else if (currentView === 'ai_create') {
+          setCurrentView('dashboard'); // Handle back from AI create if accessible
       }
   };
 
-  const handleTabChange = (tab: 'home' | 'quiz' | 'ai') => {
+  const handleTabChange = (tab: 'home' | 'quiz' | 'profile') => {
       setActiveTab(tab);
       setIsQuizActive(false); // Reset quiz active state
 
@@ -423,8 +444,8 @@ const App: React.FC = () => {
       } else if (tab === 'quiz') {
           setCurrentView('quiz_journey');
           setSelectedCategory(null);
-      } else if (tab === 'ai') {
-          setCurrentView('ai_create');
+      } else if (tab === 'profile') {
+          setCurrentView('profile');
           setSelectedCategory(null);
       }
   };
@@ -489,13 +510,14 @@ const App: React.FC = () => {
       {/* Global Header - Fixed Top (Outside swipe container) */}
       {showHeader && (
         <Header 
-          showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create'}
+          showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create' && currentView !== 'profile'}
           onBack={handleBack}
           onMenu={() => setIsLoginModalOpen(true)} // Profile icon opens Login Modal directly
-          title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : 'Daily Vocab')}
+          title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : (currentView === 'profile' ? 'My Profile' : 'Daily Vocab'))}
           showAiBar={currentView === 'dashboard'}
           userName={userName}
           onAiGenerate={handleAiGenerate}
+          showProfileButton={currentView !== 'profile'}
         />
       )}
 
@@ -585,8 +607,41 @@ const App: React.FC = () => {
             {currentView === 'leaderboard' && (
             <LeaderboardView userName={userName} userPoints={userPoints} />
             )}
+
+            {currentView === 'profile' && (
+              <ProfileView 
+                userName={userName} 
+                userLevel={Math.floor(userPoints / 500) + 1} // Example level calc
+                userPoints={userPoints}
+                userCoins={userCoins}
+                userStreak={userStreak}
+                profileImage={profileImage}
+                onUpdateName={setUserName}
+                onUpdateProfileImage={setProfileImage}
+                onOpenSettings={() => setIsSidebarOpen(true)}
+                onShowLeaderboard={() => {
+                   setCurrentView('leaderboard');
+                   setActiveTab('home'); // Switch back to home context for leaderboard
+                }}
+                isLoggedIn={isLoggedIn}
+                onLogin={() => setIsLoginModalOpen(true)}
+                onLogout={handleLogout}
+              />
+            )}
         </main>
       </div>
+
+      {/* AI FAB - Bottom Right (Visible on Dashboard) positioned above BottomNavigation */}
+      {currentView === 'dashboard' && (
+        <button
+            onClick={() => setCurrentView('ai_create')}
+            className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 bg-gradient-to-r from-teal-400 to-teal-600 text-white w-16 h-16 rounded-full shadow-lg shadow-teal-500/40 hover:scale-110 active:scale-95 transition-all duration-300 flex flex-col items-center justify-center animate-bounce-slow"
+            aria-label="Create AI Topic"
+        >
+            <SparklesIcon className="w-6 h-6 mb-0.5" />
+            <span className="text-[10px] font-black leading-none">AI</span>
+        </button>
+      )}
 
       {/* Bottom Navigation - Fixed Bottom (Outside transformed container to prevent moving) */}
       {!isQuizActive && (

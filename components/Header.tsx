@@ -10,6 +10,7 @@ interface HeaderProps {
   showAiBar: boolean;
   userName?: string;
   onAiGenerate: (topic: string) => void;
+  showProfileButton?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -19,7 +20,8 @@ const Header: React.FC<HeaderProps> = ({
   title, 
   showAiBar,
   userName = "Learner",
-  onAiGenerate
+  onAiGenerate,
+  showProfileButton = true
 }) => {
   const [aiInput, setAiInput] = useState('');
 
@@ -82,13 +84,15 @@ const Header: React.FC<HeaderProps> = ({
             </form>
           )}
           
-          <button 
-            onClick={onMenu} 
-            className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none"
-            aria-label="User Settings"
-          >
-            <ProfileIcon className="h-8 w-8 sm:h-9 sm:w-9 text-gray-300 dark:text-gray-600 hover:text-green-500 dark:hover:text-green-400 transition-colors" />
-          </button>
+          {showProfileButton && (
+            <button 
+              onClick={onMenu} 
+              className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none"
+              aria-label="User Settings"
+            >
+              <ProfileIcon className="h-8 w-8 sm:h-9 sm:w-9 text-gray-300 dark:text-gray-600 hover:text-green-500 dark:hover:text-green-400 transition-colors" />
+            </button>
+          )}
         </div>
       </div>
       
