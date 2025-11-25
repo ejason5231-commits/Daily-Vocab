@@ -93,6 +93,40 @@ const HandDrawnMapBackground = () => (
     </div>
 );
 
+const MapZones = ({ nodeSpacing, topPadding }: { nodeSpacing: number, topPadding: number }) => {
+    const zones = [
+        { name: 'Forest', color: 'bg-green-600/10', height: 10 },
+        { name: 'Desert', color: 'bg-yellow-600/10', height: 10 },
+        { name: 'Mountain', color: 'bg-gray-600/10', height: 10 },
+        { name: 'Swamp', color: 'bg-purple-600/10', height: 10 },
+        { name: 'Volcano', color: 'bg-red-600/10', height: 10 },
+    ];
+
+    return (
+        <div className="absolute inset-0 w-full pointer-events-none z-0">
+             {zones.map((zone, i) => {
+                 // Each zone covers 'height' number of levels
+                 const startLevel = i * 10;
+                 const top = topPadding + (startLevel * nodeSpacing) - (nodeSpacing / 2); // Start slightly above first node
+                 const height = zone.height * nodeSpacing;
+                 
+                 return (
+                     <div 
+                        key={zone.name}
+                        className={`absolute left-0 w-full ${zone.color} border-b-2 border-dashed border-gray-400/20`}
+                        style={{ top: `${top}px`, height: `${height}px` }}
+                     >
+                         {/* Optional subtle label for the zone */}
+                         <div className="absolute top-4 right-4 text-xs font-bold uppercase tracking-widest opacity-20 text-gray-900 dark:text-white">
+                            {zone.name} Region
+                         </div>
+                     </div>
+                 )
+             })}
+        </div>
+    );
+};
+
 const QuizView: React.FC<QuizViewProps> = ({ 
   words, 
   onQuizComplete, 
@@ -322,18 +356,56 @@ const QuizView: React.FC<QuizViewProps> = ({
         pathD += ` C ${curr.x}% ${cp1y}px, ${next.x}% ${cp2y}px, ${next.x}% ${next.y}px`;
     }
 
-    // Decor Elements
+    // Decor Elements with Themed Selection
     const decorations = points.map((p, i) => {
-        const type = (i * 7) % 11; 
+        // Determine zone based on level
+        let zoneType = 0; // Forest
+        if (p.level > 40) zoneType = 4; // Volcano
+        else if (p.level > 30) zoneType = 3; // Swamp
+        else if (p.level > 20) zoneType = 2; // Mountain
+        else if (p.level > 10) zoneType = 1; // Desert
+
+        // Select icons appropriate for zone
+        // 0: Literature (Book), 1: Tree, 2: Mountain, 3: Science, 4: Castle, 5: Travel, 6: Ruins, 7: Food, 8: Time, 9: Art, 10: Cloud, 11: Grass, 12: River
+        let possibleIcons: number[] = [];
+        let colorClass = "";
+
+        switch(zoneType) {
+            case 0: // Forest
+                possibleIcons = [1, 11, 12]; // Tree, Grass, River
+                colorClass = "text-green-600";
+                break;
+            case 1: // Desert
+                possibleIcons = [6, 2]; // Ruins, Mountain
+                colorClass = "text-yellow-600";
+                break;
+            case 2: // Mountain
+                possibleIcons = [2, 4, 10]; // Mountain, Castle, Cloud
+                colorClass = "text-gray-600";
+                break;
+            case 3: // Swamp
+                possibleIcons = [6, 11, 1]; // Ruins, Grass, Tree
+                colorClass = "text-purple-800";
+                break;
+            case 4: // Volcano
+                possibleIcons = [2, 10]; // Mountain, Cloud
+                colorClass = "text-red-700";
+                break;
+            default:
+                possibleIcons = [1, 11];
+        }
+
+        const type = possibleIcons[i % possibleIcons.length];
         const side = i % 2 === 0 ? 'left' : 'right';
         const xPos = side === 'left' ? Math.max(8, p.x - 35) : Math.min(92, p.x + 35);
-        return { type, x: xPos, y: p.y, id: i };
+        
+        return { type, x: xPos, y: p.y, id: i, colorClass };
     });
 
     return (
         <div className="relative w-full h-screen overflow-hidden font-serif transition-colors duration-300">
             <HandDrawnMapBackground />
-
+            
             {/* Task Bar / Header */}
             <div className="absolute top-0 left-0 w-full z-50 bg-[#e6d2aa] dark:bg-gray-800 border-b-4 border-[#c2a67a] dark:border-gray-700 shadow-md flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 h-auto min-h-[80px] box-border pointer-events-auto">
                 <div className="flex flex-col">
@@ -365,19 +437,8 @@ const QuizView: React.FC<QuizViewProps> = ({
             >
                 <div style={{ height: mapHeight }} className="w-full relative">
                     
-                    {/* Map Zones / Islands / Terrain Underlay */}
-                    <div className="absolute inset-0 pointer-events-none opacity-40">
-                         <svg width="100%" height="100%" preserveAspectRatio="none">
-                            <ellipse cx="20%" cy="15%" rx="60%" ry="10%" fill="#dcfce7" />
-                            <ellipse cx="80%" cy="40%" rx="50%" ry="15%" fill="#fef9c3" />
-                            <ellipse cx="30%" cy="70%" rx="60%" ry="12%" fill="#e0f2fe" />
-                         </svg>
-                    </div>
-
-                    {/* River Decoration */}
-                    <div className="absolute top-[30%] w-full h-20 opacity-60 pointer-events-none">
-                        <RiverIcon className="w-full h-full text-blue-300" />
-                    </div>
+                    {/* Zone Backgrounds */}
+                    <MapZones nodeSpacing={nodeSpacing} topPadding={topPadding} />
 
                     {/* Path Line */}
                     <svg className="absolute top-0 left-0 w-full h-full pointer-events-none filter drop-shadow-sm">
@@ -405,20 +466,22 @@ const QuizView: React.FC<QuizViewProps> = ({
                     {decorations.map(d => (
                         <div 
                             key={d.id} 
-                            className="absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform hover:scale-110"
+                            className={`absolute transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-transform hover:scale-110 ${d.colorClass}`}
                             style={{ left: `${d.x}%`, top: `${d.y}px`, zIndex: 5 }}
                         >
                             {d.type === 0 && <LiteratureIcon className="w-16 h-16 drop-shadow-lg" />}
-                            {d.type === 1 && <TreeIcon className="w-16 h-16 text-[#4ade80] drop-shadow-md" />}
-                            {d.type === 2 && <MountainIcon className="w-20 h-16 text-[#94a3b8] drop-shadow-md" />}
+                            {d.type === 1 && <TreeIcon className="w-16 h-16 drop-shadow-md" />}
+                            {d.type === 2 && <MountainIcon className="w-20 h-16 drop-shadow-md" />}
                             {d.type === 3 && <ScienceIcon className="w-16 h-16 drop-shadow-lg" />}
-                            {d.type === 4 && <CastleIcon className="w-16 h-16 text-[#64748b] drop-shadow-xl" />}
+                            {d.type === 4 && <CastleIcon className="w-16 h-16 drop-shadow-xl" />}
                             {d.type === 5 && <TravelIcon className="w-16 h-16 drop-shadow-lg" />}
-                            {d.type === 6 && <RuinsIcon className="w-16 h-16 text-[#a8a29e] drop-shadow-md" />}
+                            {d.type === 6 && <RuinsIcon className="w-16 h-16 drop-shadow-md" />}
                             {d.type === 7 && <FoodIcon className="w-16 h-16 drop-shadow-lg" />}
                             {d.type === 8 && <TimeIcon className="w-16 h-16 drop-shadow-lg" />}
                             {d.type === 9 && <ArtIcon className="w-16 h-16 drop-shadow-lg" />}
-                            {d.type === 10 && <CloudIcon className="w-16 h-10 text-white opacity-80" />}
+                            {d.type === 10 && <CloudIcon className="w-16 h-10 opacity-80" />}
+                            {d.type === 11 && <GrassIcon className="w-12 h-12" />}
+                            {d.type === 12 && <RiverIcon className="w-32 h-16 text-blue-400 opacity-60" />}
                         </div>
                     ))}
 

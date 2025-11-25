@@ -215,6 +215,12 @@ export const CoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+export const FireIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.9 14.32a8.1 8.1 0 0 0-.12-6.47v-.06c-.1-1.28.3-2.17 1.1-2.43l.1-.02a.66.66 0 0 0 .15-.04l.1-.03c.5-.2.85-.7.75-1.24a1.01 1.01 0 0 0-1.16-.83l-.1.02c-1.4.3-2.3 1.25-2.73 2.9A9.12 9.12 0 0 0 11 9.9c-.87-1.1-1.6-2.58-1.55-4.22v-.3a.99.99 0 0 0-1.35-.91l-.1.04a2.7 2.7 0 0 0-1.74 2.87c.18 2.05 1.14 4.14 2.37 5.73l.12.16c.36.48.55 1.06.55 1.66 0 1.9-1.52 3.42-3.4 3.42a3.4 3.4 0 0 1-3.13-2.22l-.05-.14a.99.99 0 0 0-1.56-.27C.3 16.53.03 17.5.03 18.33a5.95 5.95 0 0 0 5.86 6.06c3.15.05 5.74-2.4 5.95-5.5v-.01c.01-.2.03-.4.07-.6.38-1.42 1.54-2.6 2.94-3.08.38-.13.78-.2 1.18-.2.27 0 .54.03.8.1.92.2 1.76.77 2.3 1.55.32.48.56 1 .7 1.56.23 1 .05 2.04-.5 2.91l-.05.08a.98.98 0 0 0 .54 1.45c1.4.43 2.65-.2 3.12-1.6.5-1.4.33-2.83-.43-4.08a5.57 5.57 0 0 0-2.6-2.25 6.45 6.45 0 0 0-3.32-.4c-.9.1-1.76.4-2.54.9l-.08.06z"/>
+  </svg>
+);
+
 export const MountainIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 3L2 21H22L12 3Z" fill="#9CA3AF" stroke="#4B5563" strokeWidth="2" strokeLinejoin="round"/>
@@ -282,6 +288,45 @@ export const MapLocationIcon = ({ className }: { className?: string }) => (
     <path d="M20 12 Q32 6 44 12" stroke="white" strokeWidth="3" strokeOpacity="0.4" strokeLinecap="round"/>
   </svg>
 );
+
+export const Traveler3DIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Shadow */}
+      <ellipse cx="64" cy="115" rx="30" ry="10" fill="#000" opacity="0.25" />
+      
+      {/* Legs */}
+      <rect x="52" y="80" width="10" height="30" rx="3" fill="#374151" /> {/* Left Leg */}
+      <rect x="66" y="80" width="10" height="30" rx="3" fill="#374151" /> {/* Right Leg */}
+      
+      {/* Boots */}
+      <path d="M50 105 H64 V112 H50 Z" fill="#4B5563"/>
+      <path d="M64 105 H78 V112 H64 Z" fill="#4B5563"/>
+      
+      {/* Body / Tunic */}
+      <path d="M44 40 H84 L80 85 H48 L44 40 Z" fill="#78350F" />
+      <rect x="44" y="40" width="40" height="45" fill="#92400E" rx="5" />
+      <rect x="58" y="40" width="12" height="45" fill="#B45309" /> {/* Detail Stripe */}
+      
+      {/* Backpack - Behind */}
+      <path d="M82 45 L95 50 V75 L82 80 V45 Z" fill="#166534" />
+      <path d="M95 50 L98 48 L98 73 L95 75 Z" fill="#14532D" />
+      
+      {/* Head */}
+      <rect x="48" y="15" width="32" height="28" rx="8" fill="#FDE68A" />
+      
+      {/* Cap */}
+      <path d="M46 12 H82 L86 18 H42 L46 12 Z" fill="#4B5563" />
+      <rect x="48" y="8" width="32" height="6" rx="2" fill="#374151" />
+      
+      {/* Face Features */}
+      <circle cx="58" cy="28" r="2" fill="#1F2937" />
+      <circle cx="70" cy="28" r="2" fill="#1F2937" />
+      <path d="M62 34 Q64 36 66 34" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+      
+      {/* Walking Staff */}
+      <rect x="85" y="30" width="4" height="85" rx="2" fill="#A16207" transform="rotate(5 85 30)" />
+    </svg>
+  );
 
 export const LiteratureIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">

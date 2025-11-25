@@ -60,6 +60,9 @@ const App: React.FC = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   
+  // Transient State for AI Generated Words (Not persisted to app state)
+  const [aiGeneratedWords, setAiGeneratedWords] = useState<VocabularyWord[]>([]);
+  
   // Category-specific unlocked levels
   const [unlockedLevels, setUnlockedLevels] = useState<Record<string, number>>(() => {
       const stored = window.localStorage.getItem('unlockedLevels');
@@ -81,6 +84,15 @@ const App: React.FC = () => {
   const [userCoins, setUserCoins] = useState<number>(() => {
       const stored = window.localStorage.getItem('userCoins');
       return stored ? parseInt(stored, 10) : 0;
+  });
+
+  // Streak State
+  const [userStreak, setUserStreak] = useState<number>(() => {
+      const stored = window.localStorage.getItem('userStreak');
+      return stored ? parseInt(stored, 10) : 0;
+  });
+  const [lastActiveDate, setLastActiveDate] = useState<string>(() => {
+      return window.localStorage.getItem('lastActiveDate') || '';
   });
 
   const [earnedBadges, setEarnedBadges] = useState<string[]>(() => {
@@ -163,6 +175,14 @@ const App: React.FC = () => {
     localStorage.setItem('dailyProgress', JSON.stringify(dailyProgress));
   }, [dailyProgress]);
 
+  useEffect(() => {
+    localStorage.setItem('userStreak', userStreak.toString());
+  }, [userStreak]);
+
+  useEffect(() => {
+    localStorage.setItem('lastActiveDate', lastActiveDate);
+  }, [lastActiveDate]);
+
   // --- Handlers ---
 
   const handleLogin = (name: string) => {
@@ -200,7 +220,28 @@ const App: React.FC = () => {
     }
   };
 
+  const updateStreak = () => {
+    const today = getTodayString();
+    if (lastActiveDate === today) return; // Already updated streak for today
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
+
+    let newStreak = 1;
+    // If last activity was yesterday, increment streak.
+    // Otherwise (last activity was before yesterday or never), reset to 1.
+    if (lastActiveDate === yesterdayString) {
+        newStreak = userStreak + 1;
+    }
+
+    setUserStreak(newStreak);
+    setLastActiveDate(today);
+  };
+
   const updateDailyProgress = (type: 'words' | 'quizzes') => {
+    updateStreak();
+
     setDailyProgress(prev => {
       const today = getTodayString();
       if (prev.date !== today) {
@@ -316,28 +357,34 @@ const App: React.FC = () => {
     setIsGenerating(true);
     setGenerationError(null);
     try {
+      // 1. Check if it matches a built-in category
+      const existingCategory = categories.find(c => c.name.toLowerCase() === topic.toLowerCase());
+      if (existingCategory) {
+        setSelectedCategory(existingCategory);
+        setCurrentView('category');
+        setActiveTab('home');
+        setIsGenerating(false);
+        return;
+      }
+
+      // 2. If new, generate words
       const newWords = await getVocabularyForCategory(topic);
       
-      setWordCache(prev => ({
-        ...prev,
-        [topic]: newWords
-      }));
+      // 3. Set transient state (DO NOT update persistent app state like wordCache or categories)
+      setAiGeneratedWords(newWords);
 
-      let category = categories.find(c => c.name.toLowerCase() === topic.toLowerCase());
-      if (!category) {
-        category = {
-            name: topic,
-            emoji: '✨',
-            color: 'bg-teal-500',
-            textColor: 'text-white'
-        };
-        setCategories(prev => [...prev, category!]);
-      }
+      // Create a temporary category object for view
+      const tempCategory: Category = {
+          name: topic,
+          emoji: '✨',
+          color: 'bg-teal-500',
+          textColor: 'text-white'
+      };
       
-      setSelectedCategory(category);
+      setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
-      // REWARD: Creating Content can still give XP or Coins. Kept as XP for now.
+      // REWARD: Creating Content can still give XP or Coins.
       addPoints(POINTS.GENERATE_CATEGORY);
 
     } catch (error) {
@@ -349,6 +396,7 @@ const App: React.FC = () => {
 
   const handleBack = () => {
       setIsQuizActive(false); // Reset quiz active state
+      setAiGeneratedWords([]); // Clear transient AI words on back navigation
       
       if (currentView === 'quiz') {
           // Return to category view
@@ -371,6 +419,7 @@ const App: React.FC = () => {
       if (tab === 'home') {
           setCurrentView('dashboard');
           setSelectedCategory(null);
+          setAiGeneratedWords([]); // Clear AI context when switching tabs
       } else if (tab === 'quiz') {
           setCurrentView('quiz_journey');
           setSelectedCategory(null);
@@ -482,7 +531,8 @@ const App: React.FC = () => {
             {currentView === 'category' && selectedCategory && (
             <CategoryView 
                 category={selectedCategory}
-                words={wordCache[selectedCategory.name] || []}
+                // Use cached words if exists (built-in), otherwise use transient AI words
+                words={wordCache[selectedCategory.name] || aiGeneratedWords}
                 learnedWords={learnedWords}
                 onToggleLearned={handleToggleLearned}
                 onStartQuiz={(words) => handleStartQuiz(words, selectedCategory.name, unlockedLevels[selectedCategory.name] || 1)}

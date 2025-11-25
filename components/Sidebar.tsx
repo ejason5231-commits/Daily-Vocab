@@ -168,14 +168,26 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-4 border-t border-gray-100 dark:border-gray-700 text-center">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Follow on</h3>
             <div className="flex justify-center space-x-6 mb-4">
-              <button className="text-gray-400 hover:text-[#FF0000] transition-colors transform hover:scale-110">
+              <a 
+                href="https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-700 rounded-full shadow-md text-[#FF0000] border border-gray-100 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-gray-600 transition-all transform hover:scale-110"
+                aria-label="YouTube Channel"
+              >
                 <YouTubeIcon className="w-8 h-8" />
-              </button>
-              <button className="text-gray-400 hover:text-[#1877F2] transition-colors transform hover:scale-110">
-                <FacebookIcon className="w-7 h-7" />
-              </button>
+              </a>
+              <a 
+                href="https://www.facebook.com/share/1CuA2oir9e/?mibextid=wwXIfr" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-14 h-14 bg-white dark:bg-gray-700 rounded-full shadow-md text-[#1877F2] border border-gray-100 dark:border-gray-600 hover:bg-blue-50 dark:hover:bg-gray-600 transition-all transform hover:scale-110"
+                aria-label="Facebook Page"
+              >
+                <FacebookIcon className="w-8 h-8" />
+              </a>
             </div>
-            <p className="text-xs text-gray-400">Daily Vocab v1.0 by Eric App Dev</p>
+            <p className="text-xs text-gray-400">Daily Vocab v1.0 by Eric AppDev</p>
           </div>
         </div>
       </div>
