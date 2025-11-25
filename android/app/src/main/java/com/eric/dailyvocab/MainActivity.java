@@ -1,6 +1,10 @@
 package com.eric.dailyvocab;
 
+import android.Manifest;
 import android.os.Bundle;
+
+import androidx.activity.result.contract.ActivityResultContracts;
+
 import com.getcapacitor.BridgeActivity;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
@@ -23,6 +27,12 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {}
+        ).launch(Manifest.permission.RECORD_AUDIO);
+
         registerPlugin(AdMobPlugin.class);
 
         MobileAds.initialize(this, initializationStatus -> {});
