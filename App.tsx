@@ -348,18 +348,14 @@ const App: React.FC = () => {
   };
 
   const handleCorrectAnswer = () => {
-    // REWARD: Quizzes give XP
+    // REWARD: Quizzes give XP for every correct answer
     addPoints(1); 
   };
 
   const handleQuizComplete = (result: QuizCompletionResult) => {
     updateDailyProgress('quizzes');
-    // REWARD: Quizzes give XP bonuses
-    addPoints(POINTS.COMPLETE_QUIZ);
-
-    if (result.score === result.totalQuestions && result.totalQuestions > 0) {
-      addPoints(POINTS.PERFECT_QUIZ_BONUS);
-    }
+    // Points are now awarded incrementally per correct answer via handleCorrectAnswer
+    // No completion bonuses added here to ensure XP strictly equals correct answers.
     
     setMasteredWords(prev => {
       const next = new Set(prev);
@@ -403,8 +399,7 @@ const App: React.FC = () => {
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
-      // REWARD: Creating Content can still give XP or Coins.
-      addPoints(POINTS.GENERATE_CATEGORY);
+      // REMOVED: addPoints(POINTS.GENERATE_CATEGORY);
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -461,6 +456,26 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden">
       
+      {/* AI Loading Overlay - Rectangular and Compact */}
+      {isGenerating && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+          <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-2xl flex flex-row items-center gap-4 border border-gray-100 dark:border-gray-700 transform transition-all scale-100">
+            <div className="relative flex-shrink-0">
+                <div className="absolute inset-0 bg-teal-400 blur-xl opacity-20 rounded-full animate-pulse"></div>
+                <SparklesIcon className="w-8 h-8 text-teal-500 animate-spin-slow relative z-10" />
+            </div>
+            <div className="flex flex-col justify-center">
+                <h3 className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500 leading-none mb-1">
+                    Generating...
+                </h3>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-tight">
+                  Crafting your lesson...
+                </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Login Modal */}
       <LoginModal 
         isOpen={isLoginModalOpen} 
@@ -516,6 +531,7 @@ const App: React.FC = () => {
           title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : (currentView === 'profile' ? 'My Profile' : 'Daily Vocab'))}
           showAiBar={currentView === 'dashboard'}
           userName={userName}
+          profileImage={profileImage}
           onAiGenerate={handleAiGenerate}
           showProfileButton={currentView !== 'profile'}
         />
@@ -626,6 +642,7 @@ const App: React.FC = () => {
                 isLoggedIn={isLoggedIn}
                 onLogin={() => setIsLoginModalOpen(true)}
                 onLogout={handleLogout}
+                onNavigate={handleTabChange}
               />
             )}
         </main>

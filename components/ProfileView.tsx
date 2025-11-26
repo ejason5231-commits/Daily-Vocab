@@ -5,6 +5,29 @@ import {
   InviteIcon, TrophyIcon, AvatarIcon, PencilIcon, CameraIcon, LoginIcon, LogoutIcon
 } from './icons';
 
+// --- CONFIGURATION: EDIT PODCAST THUMBNAILS HERE ---
+const PODCAST_THUMBNAILS = [
+    { 
+        id: 1, 
+        title: "Daily Conversations", 
+        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?auto=format&fit=crop&w=500&q=60", // People talking
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    },
+    { 
+        id: 2, 
+        title: "Master Vocabulary", 
+        image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=60", // Books/Learning
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    },
+    { 
+        id: 3, 
+        title: "Travel English", 
+        image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=500&q=60", // Travel
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    }
+];
+// ---------------------------------------------------
+
 interface ProfileViewProps {
   userName: string;
   userLevel: number;
@@ -19,6 +42,7 @@ interface ProfileViewProps {
   isLoggedIn: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  onNavigate?: (tab: 'home' | 'quiz' | 'profile') => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
@@ -34,7 +58,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   onShowLeaderboard,
   isLoggedIn,
   onLogin,
-  onLogout
+  onLogout,
+  onNavigate
 }) => {
   // Edit Name State
   const [isEditingName, setIsEditingName] = useState(false);
@@ -44,6 +69,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
   // Logout Confirmation State
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
+  // Info Modal State
+  const [activeAlert, setActiveAlert] = useState<{ message: string, targetTab?: 'home' | 'quiz' } | null>(null);
 
   const handleEditClick = () => {
     setIsEditingName(true);
@@ -93,27 +121,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     setShowLogoutConfirm(false);
   };
 
-  const handlePodcastClick = () => {
-      window.open('https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I', '_blank');
+  const handlePodcastClick = (url: string) => {
+      window.open(url, '_blank');
   };
-
-  const podcastThumbnails = [
-    { 
-        id: 1, 
-        title: "Daily Conversations", 
-        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?auto=format&fit=crop&w=500&q=60" // People talking
-    },
-    { 
-        id: 2, 
-        title: "Master Vocabulary", 
-        image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=60" // Books/Learning
-    },
-    { 
-        id: 3, 
-        title: "Travel English", 
-        image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=500&q=60" // Travel
-    }
-  ];
 
   return (
     <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-6 pb-24 relative">
@@ -154,6 +164,38 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
+      {/* Generic Info Modal - Positioned at Language Explorer Level (approx pt-52) */}
+      {activeAlert && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-52">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+            onClick={() => setActiveAlert(null)}
+          ></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center transform scale-100 transition-all animate-scale-in">
+            <p className="text-lg font-bold text-gray-800 dark:text-white mb-6 whitespace-pre-line">{activeAlert.message}</p>
+            
+            <button 
+              onClick={() => setActiveAlert(null)}
+              className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+            >
+              OK
+            </button>
+
+            {activeAlert.targetTab && onNavigate && (
+              <button 
+                onClick={() => {
+                  setActiveAlert(null);
+                  onNavigate(activeAlert.targetTab!);
+                }}
+                className="w-full mt-3 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-md transition-all"
+              >
+                Go
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header / User Info */}
       <div className="flex flex-col items-center mb-8 animate-fade-in-up">
         {/* Avatar Section */}
@@ -167,15 +209,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                ) : (
                    <AvatarIcon className="w-full h-full text-gray-800 dark:text-gray-200" />
                )}
-               
-               {/* Overlay for Change Photo */}
-               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                   <CameraIcon className="w-8 h-8 text-white" />
-               </div>
            </div>
            
-           {/* Online Status Dot */}
-           <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-gray-800 rounded-full"></div>
+           {/* Camera Icon Badge - Always Visible */}
+           <div className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-1.5 rounded-full shadow-md border border-gray-200 dark:border-gray-600 transform transition-transform hover:scale-110">
+               <CameraIcon className="w-4 h-4 text-blue-500" />
+           </div>
         </div>
 
         {/* Name Section */}
@@ -231,31 +270,40 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       {/* Key Metrics / Achievements (Three Card Layout) */}
       <div className="grid grid-cols-3 gap-3 mb-8 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
         {/* Level Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Get 1000XP to Level Up", targetTab: 'quiz' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
             <TrophyIcon className="w-5 h-5 text-yellow-600" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Level</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userLevel}</span>
-        </div>
+        </button>
 
         {/* Coins Card (Matches Quiz Task Bar Coins) */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Mark the words ‘Learned’ to get points.", targetTab: 'home' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
             <CoinIcon className="w-5 h-5 text-yellow-500" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Coins</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userCoins.toLocaleString()}</span>
-        </div>
+        </button>
 
         {/* XP Card (Matches Quiz Task Bar XP) */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Complete the quizzes to Level Up!", targetTab: 'quiz' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mb-2">
             <StarIcon className="w-5 h-5 text-blue-500" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">XP</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userPoints.toLocaleString()}</span>
-        </div>
+        </button>
       </div>
 
       {/* Daily Streak Section with 10 Round Indicators */}
@@ -323,10 +371,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">New Episodes</span>
          </h2>
          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar touch-pan-x">
-             {podcastThumbnails.map((item) => (
+             {PODCAST_THUMBNAILS.map((item) => (
                  <button
                     key={item.id}
-                    onClick={handlePodcastClick}
+                    onClick={() => handlePodcastClick(item.url)}
                     className="flex-shrink-0 w-64 h-40 relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all group"
                  >
                      <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
