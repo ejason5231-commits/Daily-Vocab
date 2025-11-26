@@ -204,15 +204,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                ) : (
                    <AvatarIcon className="w-full h-full text-gray-800 dark:text-gray-200" />
                )}
-               
-               {/* Overlay for Change Photo */}
-               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                   <CameraIcon className="w-8 h-8 text-white" />
-               </div>
            </div>
            
-           {/* Online Status Dot */}
-           <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-4 border-white dark:border-gray-800 rounded-full"></div>
+           {/* Camera Icon Badge - Always Visible */}
+           <div className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-1.5 rounded-full shadow-md border border-gray-200 dark:border-gray-600 transform transition-transform hover:scale-110">
+               <CameraIcon className="w-4 h-4 text-blue-500" />
+           </div>
         </div>
 
         {/* Name Section */}

@@ -511,6 +511,7 @@ const App: React.FC = () => {
           title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : (currentView === 'profile' ? 'My Profile' : 'Daily Vocab'))}
           showAiBar={currentView === 'dashboard'}
           userName={userName}
+          profileImage={profileImage}
           onAiGenerate={handleAiGenerate}
           showProfileButton={currentView !== 'profile'}
         />

@@ -9,6 +9,7 @@ interface HeaderProps {
   title: string;
   showAiBar: boolean;
   userName?: string;
+  profileImage?: string | null;
   onAiGenerate: (topic: string) => void;
   showProfileButton?: boolean;
 }
@@ -20,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   title, 
   showAiBar,
   userName = "Learner",
+  profileImage,
   onAiGenerate,
   showProfileButton = true
 }) => {
@@ -90,7 +92,15 @@ const Header: React.FC<HeaderProps> = ({
               className="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none"
               aria-label="User Settings"
             >
-              <ProfileIcon className="h-8 w-8 sm:h-9 sm:w-9 text-gray-300 dark:text-gray-600 hover:text-green-500 dark:hover:text-green-400 transition-colors" />
+              {profileImage ? (
+                <img 
+                  src={profileImage} 
+                  alt="Profile" 
+                  className="h-8 w-8 sm:h-9 sm:w-9 rounded-full object-cover border border-gray-200 dark:border-gray-600 shadow-sm" 
+                />
+              ) : (
+                <ProfileIcon className="h-8 w-8 sm:h-9 sm:w-9 text-gray-300 dark:text-gray-600 hover:text-green-500 dark:hover:text-green-400 transition-colors" />
+              )}
             </button>
           )}
         </div>
