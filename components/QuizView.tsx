@@ -219,7 +219,6 @@ const QuizView: React.FC<QuizViewProps> = ({
     
     // If playing the current progressed level, filter out mastered words to avoid repeating them.
     // If reviewing an old level, we might show all (or filter them too - assuming user wants to review).
-    // Based on request "Correctly answered quizzes will not appear again", we filter for the current level loop.
     let wordsToQuiz = fullLevelWords;
     
     if (level === unlockedLevel) {
@@ -230,8 +229,6 @@ const QuizView: React.FC<QuizViewProps> = ({
         // Level complete!
         onUnlockLevel(categoryName, level + 1);
         setMascotMessage("Level Mastered!");
-        // Force update or alert?
-        // Just return to map for now as the unlock will trigger re-render/scroll
         return;
     } else if (wordsToQuiz.length === 0) {
         // Replaying a fully mastered old level
@@ -278,11 +275,13 @@ const QuizView: React.FC<QuizViewProps> = ({
         setShowFeedback(false);
         setMascotMessage("What about this one?");
       } else {
+        // Round Finished
         if (currentRoundMistakesRef.current.length > 0) {
-            setWordsForRemediation(currentRoundMistakesRef.current);
+            // Has mistakes: Enter Remediation Mode
+            setWordsForRemediation([...currentRoundMistakesRef.current]);
             setQuizState('remediation');
         } else {
-            // All questions in this batch answered correctly
+            // No mistakes: Level Complete (or Round Complete)
             onUnlockLevel(categoryName, currentLevel + 1);
             setQuizState('level_select');
             setMascotMessage("Level Complete!");
@@ -294,6 +293,21 @@ const QuizView: React.FC<QuizViewProps> = ({
         }
       }
     }, 1500);
+  };
+
+  const handleRetry = () => {
+      // Shuffle words for remediation to add variety
+      const wordsToRetry = [...wordsForRemediation].sort(() => 0.5 - Math.random());
+      
+      setQuestions(generateQuestions(wordsToRetry));
+      
+      // Reset tracking for the NEW round
+      currentRoundMistakesRef.current = []; 
+      setCurrentQuestionIndex(0);
+      setUserAnswer(null);
+      setShowFeedback(false);
+      setMascotMessage("You can do it!");
+      setQuizState('in_progress');
   };
 
   const handleManualSave = () => {
@@ -579,6 +593,30 @@ const QuizView: React.FC<QuizViewProps> = ({
     );
   }
 
+  // --- VIEW: Remediation (Retry Incorrect) ---
+  if (quizState === 'remediation') {
+    return (
+        <QuizContainer>
+             <HeaderBanner text="Review Time" />
+             <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-xl text-center border-4 border-white/60 max-w-sm mx-4">
+                <p className="text-xl text-gray-700 dark:text-gray-200 font-bold mb-4">
+                    You missed {wordsForRemediation.length} words.
+                </p>
+                <p className="text-gray-500 dark:text-gray-400 mb-8">
+                    You need to get them all right to unlock the next level!
+                </p>
+                <button 
+                    onClick={handleRetry}
+                    className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-full shadow-lg transform transition hover:scale-105 border-b-4 border-orange-700 active:border-b-0 active:translate-y-1"
+                >
+                    Retry for incorrect ones
+                </button>
+             </div>
+             <Mascot message="Don't give up!" />
+        </QuizContainer>
+    );
+  }
+
   // --- VIEW: Question (In Progress) ---
   const currentQuestion = questions[currentQuestionIndex];
   if (!currentQuestion) {
@@ -672,13 +710,6 @@ const QuizView: React.FC<QuizViewProps> = ({
           <span>Save Progress</span>
         </button>
       </div>
-
-      {/* Remediation Notice */}
-      {quizState === 'remediation' && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-            <p className="text-4xl font-black text-red-500 drop-shadow-lg animate-pulse whitespace-nowrap">Let's Review!</p>
-        </div>
-      )}
 
       {/* Mascot Footer */}
       <div className="w-full flex justify-start mt-auto pb-4">
