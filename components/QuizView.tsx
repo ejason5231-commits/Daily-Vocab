@@ -28,6 +28,8 @@ interface QuizViewProps {
   userPoints?: number;
   userCoins?: number;
   onCorrectAnswer?: () => void;
+  masteredWords?: Set<string>;
+  onSaveProgress?: (answeredWords: string[]) => void;
 }
 
 interface Question {
@@ -139,7 +141,9 @@ const QuizView: React.FC<QuizViewProps> = ({
   onQuizStatusChange,
   userPoints = 0,
   userCoins = 0,
-  onCorrectAnswer
+  onCorrectAnswer,
+  masteredWords = new Set(),
+  onSaveProgress
 }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -154,6 +158,11 @@ const QuizView: React.FC<QuizViewProps> = ({
   const currentRoundMistakesRef = useRef<VocabularyWord[]>([]);
   const [correctlyAnsweredInSession, setCorrectlyAnsweredInSession] = useState<Set<string>>(new Set());
 
+  const wordsPerLevel = 20;
+  const totalLevels = useMemo(() => Math.ceil(words.length / wordsPerLevel), [words]);
+  
+  const [currentLevel, setCurrentLevel] = useState(startAtLevel || 1);
+
   // Notify parent about quiz status (active/inactive)
   useEffect(() => {
     if (onQuizStatusChange) {
@@ -164,6 +173,7 @@ const QuizView: React.FC<QuizViewProps> = ({
 
   const generateQuestions = useCallback((wordsToQuiz: VocabularyWord[]): Question[] => {
     return wordsToQuiz.map(correctWord => {
+      // Select decoys from the entire word list, not just the filtered one, to ensure variety
       const decoys = words
         .filter(w => w.word !== correctWord.word)
         .sort(() => 0.5 - Math.random())
@@ -177,17 +187,6 @@ const QuizView: React.FC<QuizViewProps> = ({
       };
     });
   }, [words]);
-
-  const wordsPerLevel = 20;
-  const totalLevels = useMemo(() => Math.ceil(words.length / wordsPerLevel), [words]);
-  
-  const [currentLevel, setCurrentLevel] = useState(startAtLevel || 1);
-  
-  const levelWords = useMemo(() => {
-    const startIndex = (currentLevel - 1) * wordsPerLevel;
-    const endIndex = startIndex + wordsPerLevel;
-    return words.slice(startIndex, endIndex);
-  }, [currentLevel, words]);
 
   // Scroll to current level on mount
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -206,26 +205,50 @@ const QuizView: React.FC<QuizViewProps> = ({
   }, [quizState, unlockedLevel, totalLevels]);
 
   useEffect(() => {
-    if (quizState === 'in_progress') {
-        setQuestions(generateQuestions(levelWords));
-        setMascotMessage("Let's do this!");
-    } else if (quizState === 'remediation') {
-        setQuestions(generateQuestions(wordsForRemediation));
-        setMascotMessage("Let's try again!");
-    }
-
-    currentRoundMistakesRef.current = [];
-    setCurrentQuestionIndex(0);
-    setUserAnswer(null);
-    setShowFeedback(false);
-  }, [quizState, levelWords, wordsForRemediation, generateQuestions]);
-  
-  useEffect(() => {
     if (startAtLevel) {
       handleLevelSelect(startAtLevel);
     }
   }, [startAtLevel]);
 
+  const handleLevelSelect = (level: number) => {
+    setCurrentLevel(level);
+    
+    const startIndex = (level - 1) * wordsPerLevel;
+    const endIndex = startIndex + wordsPerLevel;
+    const fullLevelWords = words.slice(startIndex, endIndex);
+    
+    // If playing the current progressed level, filter out mastered words to avoid repeating them.
+    // If reviewing an old level, we might show all (or filter them too - assuming user wants to review).
+    // Based on request "Correctly answered quizzes will not appear again", we filter for the current level loop.
+    let wordsToQuiz = fullLevelWords;
+    
+    if (level === unlockedLevel) {
+        wordsToQuiz = fullLevelWords.filter(w => !masteredWords.has(w.word));
+    }
+
+    if (wordsToQuiz.length === 0 && level === unlockedLevel) {
+        // Level complete!
+        onUnlockLevel(categoryName, level + 1);
+        setMascotMessage("Level Mastered!");
+        // Force update or alert?
+        // Just return to map for now as the unlock will trigger re-render/scroll
+        return;
+    } else if (wordsToQuiz.length === 0) {
+        // Replaying a fully mastered old level
+        wordsToQuiz = fullLevelWords;
+    }
+
+    setQuestions(generateQuestions(wordsToQuiz));
+    setMascotMessage("Let's do this!");
+    
+    currentRoundMistakesRef.current = [];
+    setCurrentQuestionIndex(0);
+    setUserAnswer(null);
+    setShowFeedback(false);
+    setScore(0);
+    setCorrectlyAnsweredInSession(new Set());
+    setQuizState('in_progress');
+  };
 
   const handleAnswer = (answer: string) => {
     if (showFeedback) return;
@@ -239,7 +262,7 @@ const QuizView: React.FC<QuizViewProps> = ({
       setScore(prev => prev + 1);
       // Trigger live update of XP
       if (onCorrectAnswer) onCorrectAnswer();
-      setCorrectlyAnsweredInSession(prev => new Set(prev).add(questions[currentQuestionIndex].correctAnswer));
+      setCorrectlyAnsweredInSession(prev => new Set(prev).add(currentOriginalWord.word));
       const messages = ["Awesome!", "Great job!", "You got it!", "Correct!", "Superb!"];
       setMascotMessage(messages[Math.floor(Math.random() * messages.length)]);
     } else {
@@ -259,6 +282,7 @@ const QuizView: React.FC<QuizViewProps> = ({
             setWordsForRemediation(currentRoundMistakesRef.current);
             setQuizState('remediation');
         } else {
+            // All questions in this batch answered correctly
             onUnlockLevel(categoryName, currentLevel + 1);
             setQuizState('level_select');
             setMascotMessage("Level Complete!");
@@ -271,12 +295,14 @@ const QuizView: React.FC<QuizViewProps> = ({
       }
     }, 1500);
   };
-  
-  const handleLevelSelect = (level: number) => {
-    setCurrentLevel(level);
-    setQuizState('in_progress');
-    setScore(0);
-    setCorrectlyAnsweredInSession(new Set());
+
+  const handleManualSave = () => {
+      if (onSaveProgress) {
+          onSaveProgress(Array.from(correctlyAnsweredInSession));
+          alert("Progress saved! Correctly answered questions will not appear again.");
+      } else {
+          alert("Progress saved!");
+      }
   };
 
   // --- Render Helpers ---
@@ -639,7 +665,7 @@ const QuizView: React.FC<QuizViewProps> = ({
       {/* Save Button */}
        <div className="w-full flex justify-center mb-2">
         <button
-          onClick={() => alert("Progress saved!")}
+          onClick={handleManualSave}
           className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 dark:bg-white/20 dark:hover:bg-white/40 border-2 border-indigo-800 dark:border-white text-white font-bold rounded-full shadow-lg backdrop-blur-sm transition-all transform hover:scale-105"
         >
           <SaveIcon className="h-6 w-6" />

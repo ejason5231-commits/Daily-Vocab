@@ -354,12 +354,21 @@ const App: React.FC = () => {
 
   const handleQuizComplete = (result: QuizCompletionResult) => {
     updateDailyProgress('quizzes');
-    // Points are now awarded incrementally per correct answer via handleCorrectAnswer
-    // No completion bonuses added here to ensure XP strictly equals correct answers.
     
     setMasteredWords(prev => {
       const next = new Set(prev);
       result.correctlyAnsweredWords.forEach(word => next.add(word));
+      return next;
+    });
+  };
+
+  // New function to handle intermediate saves
+  const handleSaveProgress = (answeredWords: string[]) => {
+    if (answeredWords.length === 0) return;
+    
+    setMasteredWords(prev => {
+      const next = new Set(prev);
+      answeredWords.forEach(word => next.add(word));
       return next;
     });
   };
@@ -592,6 +601,8 @@ const App: React.FC = () => {
                 userPoints={userPoints}
                 userCoins={userCoins}
                 onCorrectAnswer={handleCorrectAnswer}
+                masteredWords={masteredWords}
+                onSaveProgress={handleSaveProgress}
             />
             )}
 
@@ -608,7 +619,8 @@ const App: React.FC = () => {
                 userPoints={userPoints}
                 userCoins={userCoins}
                 onCorrectAnswer={handleCorrectAnswer}
-                // No startAtLevel prop, let it resume from unlock level
+                masteredWords={masteredWords}
+                onSaveProgress={handleSaveProgress}
             />
             )}
 
