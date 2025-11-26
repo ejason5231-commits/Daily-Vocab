@@ -348,18 +348,14 @@ const App: React.FC = () => {
   };
 
   const handleCorrectAnswer = () => {
-    // REWARD: Quizzes give XP
+    // REWARD: Quizzes give XP for every correct answer
     addPoints(1); 
   };
 
   const handleQuizComplete = (result: QuizCompletionResult) => {
     updateDailyProgress('quizzes');
-    // REWARD: Quizzes give XP bonuses
-    addPoints(POINTS.COMPLETE_QUIZ);
-
-    if (result.score === result.totalQuestions && result.totalQuestions > 0) {
-      addPoints(POINTS.PERFECT_QUIZ_BONUS);
-    }
+    // Points are now awarded incrementally per correct answer via handleCorrectAnswer
+    // No completion bonuses added here to ensure XP strictly equals correct answers.
     
     setMasteredWords(prev => {
       const next = new Set(prev);
@@ -403,8 +399,7 @@ const App: React.FC = () => {
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
-      // REWARD: Creating Content can still give XP or Coins.
-      addPoints(POINTS.GENERATE_CATEGORY);
+      // REMOVED: addPoints(POINTS.GENERATE_CATEGORY);
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -626,6 +621,7 @@ const App: React.FC = () => {
                 isLoggedIn={isLoggedIn}
                 onLogin={() => setIsLoginModalOpen(true)}
                 onLogout={handleLogout}
+                onNavigate={handleTabChange}
               />
             )}
         </main>

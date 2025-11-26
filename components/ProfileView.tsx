@@ -19,6 +19,7 @@ interface ProfileViewProps {
   isLoggedIn: boolean;
   onLogin: () => void;
   onLogout: () => void;
+  onNavigate?: (tab: 'home' | 'quiz' | 'profile') => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
@@ -34,7 +35,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   onShowLeaderboard,
   isLoggedIn,
   onLogin,
-  onLogout
+  onLogout,
+  onNavigate
 }) => {
   // Edit Name State
   const [isEditingName, setIsEditingName] = useState(false);
@@ -44,6 +46,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
   // Logout Confirmation State
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  
+  // Info Modal State
+  const [activeAlert, setActiveAlert] = useState<{ message: string, targetTab?: 'home' | 'quiz' } | null>(null);
 
   const handleEditClick = () => {
     setIsEditingName(true);
@@ -154,6 +159,38 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
+      {/* Generic Info Modal */}
+      {activeAlert && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
+            onClick={() => setActiveAlert(null)}
+          ></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center transform scale-100 transition-all animate-scale-in">
+            <p className="text-lg font-bold text-gray-800 dark:text-white mb-6 whitespace-pre-line">{activeAlert.message}</p>
+            
+            <button 
+              onClick={() => setActiveAlert(null)}
+              className="w-full py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+            >
+              OK
+            </button>
+
+            {activeAlert.targetTab && onNavigate && (
+              <button 
+                onClick={() => {
+                  setActiveAlert(null);
+                  onNavigate(activeAlert.targetTab!);
+                }}
+                className="w-full mt-3 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-md transition-all"
+              >
+                Go
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header / User Info */}
       <div className="flex flex-col items-center mb-8 animate-fade-in-up">
         {/* Avatar Section */}
@@ -231,31 +268,40 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       {/* Key Metrics / Achievements (Three Card Layout) */}
       <div className="grid grid-cols-3 gap-3 mb-8 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
         {/* Level Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Get 1000XP to Level Up", targetTab: 'quiz' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
             <TrophyIcon className="w-5 h-5 text-yellow-600" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Level</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userLevel}</span>
-        </div>
+        </button>
 
         {/* Coins Card (Matches Quiz Task Bar Coins) */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Mark the words ‘Learned’ to get points.", targetTab: 'home' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
             <CoinIcon className="w-5 h-5 text-yellow-500" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Coins</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userCoins.toLocaleString()}</span>
-        </div>
+        </button>
 
         {/* XP Card (Matches Quiz Task Bar XP) */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105">
+        <button 
+          onClick={() => setActiveAlert({ message: "Complete the quizzes to Level Up!", targetTab: 'quiz' })}
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+        >
           <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mb-2">
             <StarIcon className="w-5 h-5 text-blue-500" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">XP</span>
           <span className="text-lg font-bold text-gray-800 dark:text-white">{userPoints.toLocaleString()}</span>
-        </div>
+        </button>
       </div>
 
       {/* Daily Streak Section with 10 Round Indicators */}
