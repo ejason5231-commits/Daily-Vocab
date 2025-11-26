@@ -514,17 +514,28 @@ const QuizView: React.FC<QuizViewProps> = ({
                                     onClick={() => !isLocked && handleLevelSelect(p.level)}
                                     className={`${baseClasses} ${colorClasses}`}
                                 >
-                                    {isLocked && <LockIcon className="w-6 h-6 text-gray-400" />}
-                                    {isCompleted && <StarIcon className="w-8 h-8 text-white drop-shadow-md" />}
-                                    {isCurrent && (
+                                    {isLocked ? (
+                                        <LockIcon className="w-6 h-6 text-gray-400" />
+                                    ) : (
                                         <>
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10">
-                                                <MapLocationIcon className="w-12 h-12 drop-shadow-lg" />
-                                            </div>
-                                            <span className="font-black text-white text-lg relative z-10 drop-shadow-md">{p.level}</span>
+                                            {/* Always show number for unlocked/completed levels */}
+                                            <span className="font-black text-white text-xl relative z-10 drop-shadow-md">{p.level}</span>
+                                            
+                                            {/* Current Level Pin */}
+                                            {isCurrent && (
+                                                <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-20">
+                                                    <MapLocationIcon className="w-12 h-12 drop-shadow-lg" />
+                                                </div>
+                                            )}
+
+                                            {/* Completed Level Star Badge */}
+                                            {isCompleted && (
+                                                <div className="absolute -top-2 -right-2 z-20 bg-yellow-400 rounded-full p-0.5 shadow-sm border border-white/50">
+                                                    <StarIcon className="w-4 h-4 text-white" />
+                                                </div>
+                                            )}
                                         </>
                                     )}
-                                    {!isLocked && !isCompleted && !isCurrent && <span className="font-black drop-shadow-md text-xl">{p.level}</span>}
                                 </button>
                                 
                                 {/* Level Label */}

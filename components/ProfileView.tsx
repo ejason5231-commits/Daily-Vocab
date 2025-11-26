@@ -36,11 +36,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   onLogin,
   onLogout
 }) => {
-  // Calculate XP Progress based on Level (assuming 500 XP per level)
-  const xpPerLevel = 500;
-  const currentLevelXP = userPoints % xpPerLevel;
-  const xpPercentage = (currentLevelXP / xpPerLevel) * 100;
-
   // Edit Name State
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(userName);
@@ -263,7 +258,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Daily Streak Section */}
+      {/* Daily Streak Section with 10 Round Indicators */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">Daily Streak</h2>
@@ -273,16 +268,34 @@ const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
         </div>
         
-        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">
-           <span>XP Progress (Lvl {userLevel})</span>
-           <span>{currentLevelXP}/{xpPerLevel}</span>
+        <div className="flex justify-between items-center mt-4 px-1">
+            {Array.from({ length: 10 }).map((_, index) => {
+                // Calculate cycle progress: 1-10
+                const cycleProgress = userStreak % 10;
+                // If userStreak is 10, 20, etc., cycleProgress is 0, but we want it to show full 10 dots.
+                const filledCount = (cycleProgress === 0 && userStreak > 0) ? 10 : cycleProgress;
+                
+                const isFilled = index < filledCount;
+                
+                return (
+                    <div key={index} className="flex flex-col items-center">
+                        <div 
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
+                                isFilled 
+                                ? 'bg-orange-500 border-orange-600 shadow-sm shadow-orange-200 dark:shadow-none scale-110' 
+                                : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                            }`}
+                        >
+                            {isFilled && <FireIcon className="w-3 h-3 text-white" />}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
-        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full transition-all duration-1000 ease-out" 
-            style={{ width: `${xpPercentage}%` }}
-          ></div>
-        </div>
+        
+        <p className="text-center text-xs text-gray-400 mt-3 font-medium">
+            Keep the flame alive! Practice daily to maintain your streak.
+        </p>
       </div>
 
       {/* Engage & Share Section */}
