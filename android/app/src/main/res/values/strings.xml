@@ -4,4 +4,9 @@
     <string name="title_activity_main">Daily Vocab</string>
     <string name="package_name">com.eric.dailyvocab</string>
     <string name="custom_url_scheme">com.eric.dailyvocab</string>
+    <string name="facebook_app_id">830146823165072</string>
+    <string name="fb_login_protocol_scheme">fb830146823165072</string>
+    <string name="facebook_client_token">bd15528a4d8dc665cfb457284e156b50</string>
+    <!-- Replace with your Firebase web client ID from Google Cloud Console -->
+    <string name="default_web_client_id">YOUR_DEFAULT_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 </resources>

@@ -6,9 +6,10 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (email: string) => void;
+  onGoogleLogin?: () => void; // optional handler for Google sign-in
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, onGoogleLogin }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +25,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
   };
 
   const handleSocialLogin = (provider: string) => {
+    if (provider === 'Google' && onGoogleLogin) {
+      onGoogleLogin();
+      return;
+    }
     onLogin(provider === 'Google' ? 'Google User' : 'Facebook User');
     onClose();
   };
@@ -31,14 +36,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       ></div>
 
       {/* Modal Content */}
       <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 p-6 sm:p-8">
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-full transition-colors"
         >
@@ -57,16 +62,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
 
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <button 
-            onClick={() => handleSocialLogin('Google')}
+          <button
+            onClick={() => onGoogleLogin ? onGoogleLogin() : handleSocialLogin('Google')}
             className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <GoogleIcon className="w-5 h-5 mr-2" />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Google</span>
           </button>
-          <button 
-             onClick={() => handleSocialLogin('Facebook')}
-             className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          <button
+            onClick={() => handleSocialLogin('Facebook')}
+            className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <FacebookIcon className="w-5 h-5 mr-2 text-[#1877F2]" />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Facebook</span>
@@ -74,20 +79,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         </div>
 
         <div className="relative flex items-center justify-center mb-6">
-            <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-            <span className="relative px-4 bg-white dark:bg-gray-800 text-xs text-gray-400 font-medium uppercase">
-                Or with email
-            </span>
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+          </div>
+          <span className="relative px-4 bg-white dark:bg-gray-800 text-xs text-gray-400 font-medium uppercase">
+            Or with email
+          </span>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -97,8 +102,8 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -107,7 +112,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
             />
           </div>
 
-          <button 
+          <button
             type="submit"
             className="w-full py-3.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30 transform active:scale-95 transition-all mt-2"
           >
@@ -119,7 +124,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {isLoginView ? "Don't have an account? " : "Already have an account? "}
-            <button 
+            <button
               onClick={() => setIsLoginView(!isLoginView)}
               className="font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 transition-colors"
             >

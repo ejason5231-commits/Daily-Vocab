@@ -1,10 +1,17 @@
 package com.eric.dailyvocab;
 
 import android.Manifest;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 
 import androidx.activity.result.contract.ActivityResultContracts;
 
+import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
 import com.getcapacitor.BridgeActivity;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
@@ -15,6 +22,9 @@ import com.google.android.gms.ads.rewarded.RewardedAd;
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MainActivity extends BridgeActivity {
     private static final long AD_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
@@ -28,12 +38,28 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(
+                    "com.eric.dailyvocab",
+                    PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                Log.d("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
         registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {}
         ).launch(Manifest.permission.RECORD_AUDIO);
 
         registerPlugin(AdMobPlugin.class);
+        registerPlugin(FirebaseLoginPlugin.class);
 
         MobileAds.initialize(this, initializationStatus -> {});
 
