@@ -5,6 +5,29 @@ import {
   InviteIcon, TrophyIcon, AvatarIcon, PencilIcon, CameraIcon, LoginIcon, LogoutIcon
 } from './icons';
 
+// --- CONFIGURATION: EDIT PODCAST THUMBNAILS HERE ---
+const PODCAST_THUMBNAILS = [
+    { 
+        id: 1, 
+        title: "Daily Conversations", 
+        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?auto=format&fit=crop&w=500&q=60", // People talking
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    },
+    { 
+        id: 2, 
+        title: "Master Vocabulary", 
+        image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=60", // Books/Learning
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    },
+    { 
+        id: 3, 
+        title: "Travel English", 
+        image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=500&q=60", // Travel
+        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+    }
+];
+// ---------------------------------------------------
+
 interface ProfileViewProps {
   userName: string;
   userLevel: number;
@@ -98,27 +121,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     setShowLogoutConfirm(false);
   };
 
-  const handlePodcastClick = () => {
-      window.open('https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I', '_blank');
+  const handlePodcastClick = (url: string) => {
+      window.open(url, '_blank');
   };
-
-  const podcastThumbnails = [
-    { 
-        id: 1, 
-        title: "Daily Conversations", 
-        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?auto=format&fit=crop&w=500&q=60" // People talking
-    },
-    { 
-        id: 2, 
-        title: "Master Vocabulary", 
-        image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=60" // Books/Learning
-    },
-    { 
-        id: 3, 
-        title: "Travel English", 
-        image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=500&q=60" // Travel
-    }
-  ];
 
   return (
     <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-6 pb-24 relative">
@@ -159,9 +164,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* Generic Info Modal */}
+      {/* Generic Info Modal - Positioned at Language Explorer Level (approx pt-52) */}
       {activeAlert && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-52">
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" 
             onClick={() => setActiveAlert(null)}
@@ -366,10 +371,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">New Episodes</span>
          </h2>
          <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar touch-pan-x">
-             {podcastThumbnails.map((item) => (
+             {PODCAST_THUMBNAILS.map((item) => (
                  <button
                     key={item.id}
-                    onClick={handlePodcastClick}
+                    onClick={() => handlePodcastClick(item.url)}
                     className="flex-shrink-0 w-64 h-40 relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all group"
                  >
                      <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
