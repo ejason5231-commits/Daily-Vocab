@@ -1,7 +1,8 @@
+
 import { Badge, LeaderboardEntry, Tier } from './types';
 
 export const POINTS = {
-  LEARN_WORD: 10,
+  LEARN_WORD: 1,
   COMPLETE_QUIZ: 50,
   PERFECT_QUIZ_BONUS: 100,
   GENERATE_CATEGORY: 75,

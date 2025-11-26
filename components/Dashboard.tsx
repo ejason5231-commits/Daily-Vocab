@@ -59,11 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="p-4 sm:p-6 pb-24">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 animate-fade-in-up">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">Learn & Explore</h2>
-      </div>
-      
-      <div className="mb-8 mt-4 animate-fade-in-up">
+      {/* Increased top margin (mt-14) on mobile to clear the fixed AI header bar */}
+      <div className="mb-8 mt-14 sm:mt-6 animate-fade-in-up">
         <UserStats 
           userName={userName}
           userPoints={userPoints}

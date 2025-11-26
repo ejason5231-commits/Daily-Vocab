@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { HomeIcon, QuizIcon, SparklesIcon, SettingsIcon } from './icons';
+import { HomeIcon, QuizIcon, ProfileIcon, SettingsIcon } from './icons';
 
 interface BottomNavigationProps {
-  currentTab: 'home' | 'quiz' | 'ai';
-  onTabChange: (tab: 'home' | 'quiz' | 'ai') => void;
+  currentTab: 'home' | 'quiz' | 'profile';
+  onTabChange: (tab: 'home' | 'quiz' | 'profile') => void;
   onOpenSettings: () => void;
 }
 
@@ -31,13 +31,13 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({ currentTab, onTabCh
           <span className="text-xs font-bold">Quiz</span>
         </button>
         <button 
-          onClick={() => onTabChange('ai')}
-          className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 group ${currentTab === 'ai' ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+          onClick={() => onTabChange('profile')}
+          className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200 group ${currentTab === 'profile' ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
         >
-          <div className={`p-1 rounded-full transition-transform duration-200 ${currentTab === 'ai' ? 'bg-primary-100 dark:bg-primary-900/30 scale-110' : 'group-hover:scale-105'}`}>
-            <SparklesIcon className="h-6 w-6" />
+          <div className={`p-1 rounded-full transition-transform duration-200 ${currentTab === 'profile' ? 'bg-primary-100 dark:bg-primary-900/30 scale-110' : 'group-hover:scale-105'}`}>
+            <ProfileIcon className="h-6 w-6" />
           </div>
-          <span className="text-xs font-bold">AI Create</span>
+          <span className="text-xs font-bold">Profile</span>
         </button>
         <button 
           onClick={onOpenSettings}

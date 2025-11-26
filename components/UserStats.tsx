@@ -26,7 +26,9 @@ const UserStats: React.FC<UserStatsProps> = ({ userName, userPoints, goal, progr
              <span className="text-sm font-bold text-gray-800 dark:text-white leading-none">Hi, {userName}</span>
              {isGoalCompleted && <CheckCircleIconSolid className="h-4 w-4 text-green-500" />}
           </div>
-          <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400 mt-1">{userPoints.toLocaleString()} pts</span>
+          <div className="flex items-center space-x-2 mt-1">
+             <span className="text-xs font-bold text-yellow-600 dark:text-yellow-400">{userPoints.toLocaleString()} pts</span>
+          </div>
        </div>
 
        {/* Goal Info - Right Aligned */}

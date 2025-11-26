@@ -127,8 +127,8 @@ export const PlayIcon = ({ className }: { className?: string }) => (
 );
 
 export const TrophyIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M11.22 3.117A.75.75 0 0010 2.5h-.002a.75.75 0 00-.718.617L8.36 9.383a.75.75 0 01-.582.582l-6.266.92A.75.75 0 001 11.633v.002a.75.75 0 00.75.75H7.5a.75.75 0 01.75.75v5.75a.75.75 0 00.75.75h2.5a.75.75 0 00.75-.75V13.13a.75.75 0 01.75-.75h5.75a.75.75 0 00.75-.75v-.002a.75.75 0 00-.748-.748l-6.266-.92a.75.75 0 01-.582-.582L11.22 3.117z" clipRule="evenodd" />
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+       <path d="M19 5H5V7C5 9.21 6.79 11 9 11H15C17.21 11 19 9.21 19 7V5ZM5 2H19V4H18V7C18 10.31 15.31 13 12 13C8.69 13 6 10.31 6 7V4H5V2ZM8 4V7C8 9.21 9.79 11 12 11C14.21 11 16 9.21 16 7V4H8ZM11 14.93V19H8V21H16V19H13V14.93C15.93 14.44 18.06 12 18.06 9H20.06C20.06 13.06 16.96 16.43 13 16.92V19H11V16.92C7.04 16.43 3.94 13.06 3.94 9H5.94C5.94 12 8.07 14.44 11 14.93Z" />
     </svg>
 );
 
@@ -215,6 +215,58 @@ export const CoinIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+export const FireIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.9 14.32a8.1 8.1 0 0 0-.12-6.47v-.06c-.1-1.28.3-2.17 1.1-2.43l.1-.02a.66.66 0 0 0 .15-.04l.1-.03c.5-.2.85-.7.75-1.24a1.01 1.01 0 0 0-1.16-.83l-.1.02c-1.4.3-2.3 1.25-2.73 2.9A9.12 9.12 0 0 0 11 9.9c-.87-1.1-1.6-2.58-1.55-4.22v-.3a.99.99 0 0 0-1.35-.91l-.1.04a2.7 2.7 0 0 0-1.74 2.87c.18 2.05 1.14 4.14 2.37 5.73l.12.16c.36.48.55 1.06.55 1.66 0 1.9-1.52 3.42-3.4 3.42a3.4 3.4 0 0 1-3.13-2.22l-.05-.14a.99.99 0 0 0-1.56-.27C.3 16.53.03 17.5.03 18.33a5.95 5.95 0 0 0 5.86 6.06c3.15.05 5.74-2.4 5.95-5.5v-.01c.01-.2.03-.4.07-.6.38-1.42 1.54-2.6 2.94-3.08.38-.13.78-.2 1.18-.2.27 0 .54.03.8.1.92.2 1.76.77 2.3 1.55.32.48.56 1 .7 1.56.23 1 .05 2.04-.5 2.91l-.05.08a.98.98 0 0 0 .54 1.45c1.4.43 2.65-.2 3.12-1.6.5-1.4.33-2.83-.43-4.08a5.57 5.57 0 0 0-2.6-2.25 6.45 6.45 0 0 0-3.32-.4c-.9.1-1.76.4-2.54.9l-.08.06z"/>
+  </svg>
+);
+
+export const InviteIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+  </svg>
+);
+
+export const HelpIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+  </svg>
+);
+
+export const PencilIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+    </svg>
+);
+
+export const CameraIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+    </svg>
+);
+
+export const LoginIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+);
+
+export const LogoutIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+    </svg>
+);
+
+export const PodcastIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="4" width="20" height="16" rx="4" fill="#3B82F6" className="text-red-500" stroke="currentColor" strokeWidth="2" fillOpacity="0.1"/>
+    <circle cx="12" cy="12" r="4" fill="currentColor" className="text-red-500"/>
+    <path d="M12 8 V16 M8 12 H16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+    <path d="M7 12 C7 9.23858 9.23858 7 12 7 C14.7614 7 17 9.23858 17 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-500"/>
+    <rect x="10" y="9" width="4" height="6" rx="2" fill="currentColor" className="text-red-600"/>
+  </svg>
+);
+
 export const MountainIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <path d="M12 3L2 21H22L12 3Z" fill="#9CA3AF" stroke="#4B5563" strokeWidth="2" strokeLinejoin="round"/>
@@ -282,6 +334,45 @@ export const MapLocationIcon = ({ className }: { className?: string }) => (
     <path d="M20 12 Q32 6 44 12" stroke="white" strokeWidth="3" strokeOpacity="0.4" strokeLinecap="round"/>
   </svg>
 );
+
+export const Traveler3DIcon = ({ className }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Shadow */}
+      <ellipse cx="64" cy="115" rx="30" ry="10" fill="#000" opacity="0.25" />
+      
+      {/* Legs */}
+      <rect x="52" y="80" width="10" height="30" rx="3" fill="#374151" /> {/* Left Leg */}
+      <rect x="66" y="80" width="10" height="30" rx="3" fill="#374151" /> {/* Right Leg */}
+      
+      {/* Boots */}
+      <path d="M50 105 H64 V112 H50 Z" fill="#4B5563"/>
+      <path d="M64 105 H78 V112 H64 Z" fill="#4B5563"/>
+      
+      {/* Body / Tunic */}
+      <path d="M44 40 H84 L80 85 H48 L44 40 Z" fill="#78350F" />
+      <rect x="44" y="40" width="40" height="45" fill="#92400E" rx="5" />
+      <rect x="58" y="40" width="12" height="45" fill="#B45309" /> {/* Detail Stripe */}
+      
+      {/* Backpack - Behind */}
+      <path d="M82 45 L95 50 V75 L82 80 V45 Z" fill="#166534" />
+      <path d="M95 50 L98 48 L98 73 L95 75 Z" fill="#14532D" />
+      
+      {/* Head */}
+      <rect x="48" y="15" width="32" height="28" rx="8" fill="#FDE68A" />
+      
+      {/* Cap */}
+      <path d="M46 12 H82 L86 18 H42 L46 12 Z" fill="#4B5563" />
+      <rect x="48" y="8" width="32" height="6" rx="2" fill="#374151" />
+      
+      {/* Face Features */}
+      <circle cx="58" cy="28" r="2" fill="#1F2937" />
+      <circle cx="70" cy="28" r="2" fill="#1F2937" />
+      <path d="M62 34 Q64 36 66 34" stroke="#1F2937" strokeWidth="2" strokeLinecap="round" />
+      
+      {/* Walking Staff */}
+      <rect x="85" y="30" width="4" height="85" rx="2" fill="#A16207" transform="rotate(5 85 30)" />
+    </svg>
+  );
 
 export const LiteratureIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -480,6 +571,6 @@ export const FinanceIcon = ({ className }: { className?: string }) => (
     {/* Dollar Sign */}
     <path d="M32 16 V48 M24 22 H32 C36 22 38 24 38 28 C38 32 36 34 32 34 H28 C24 34 22 36 22 40 C22 44 24 46 32 46 H40" stroke="#B45309" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
     {/* Gloss */}
-    <path d="M20 16 Q32 12 44 16" stroke="white" strokeWidth="3" strokeOpacity="0.4" strokeLinecap="round"/>
+    <path d="M20 16 Q32 12 44 16" stroke="white" strokeWidth="3" strokeOpacity="0.3" strokeLinecap="round"/>
   </svg>
 );
