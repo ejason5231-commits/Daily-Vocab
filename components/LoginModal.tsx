@@ -12,19 +12,33 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
-      onLogin(email.split('@')[0]); // Use part of email as username for demo
+      onLogin(email.split('@')[0]); // Fallback for email login (mock)
       onClose();
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    onLogin(provider === 'Google' ? 'Google User' : 'Facebook User');
+  const handleGoogleLogin = () => {
+    setError(null);
+    try {
+      // Mock Google Login
+      onLogin("Google User");
+      onClose();
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      setError("Failed to sign in with Google. Please try again.");
+    }
+  };
+
+  const handleFacebookLogin = () => {
+    // Placeholder for Facebook (requires separate provider setup)
+    onLogin('Facebook User');
     onClose();
   };
 
@@ -55,17 +69,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
           </p>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
+            {error}
+          </div>
+        )}
+
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <button 
-            onClick={() => handleSocialLogin('Google')}
+            onClick={handleGoogleLogin}
             className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <GoogleIcon className="w-5 h-5 mr-2" />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Google</span>
           </button>
           <button 
-             onClick={() => handleSocialLogin('Facebook')}
+             onClick={handleFacebookLogin}
              className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <FacebookIcon className="w-5 h-5 mr-2 text-[#1877F2]" />

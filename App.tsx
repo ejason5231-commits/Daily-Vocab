@@ -205,16 +205,17 @@ const App: React.FC = () => {
   // --- Handlers ---
 
   const handleLogin = (name: string) => {
+    // This is the manual/fallback login handler
     setUserName(name);
     setIsLoggedIn(true);
     setIsLoginModalOpen(false);
-    // In a real app, you would fetch user data here
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setUserName("Learner");
     setIsSidebarOpen(false);
+    // Optionally reset other states here
   };
 
   const handleToggleLearned = (word: string) => {
