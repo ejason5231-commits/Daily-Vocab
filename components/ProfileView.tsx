@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { 
   StarIcon, CoinIcon, FireIcon, 
@@ -123,6 +122,13 @@ const ProfileView: React.FC<ProfileViewProps> = ({
 
   const handlePodcastClick = (url: string) => {
       window.open(url, '_blank');
+  };
+
+  const getLevelLabel = (level: number): string => {
+    if (level <= 1) return "A1-A2";
+    if (level === 2) return "B1";
+    if (level === 3) return "B2";
+    return "C1"; // Level 4 and above
   };
 
   return (
@@ -278,7 +284,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <TrophyIcon className="w-5 h-5 text-yellow-600" />
           </div>
           <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Level</span>
-          <span className="text-lg font-bold text-gray-800 dark:text-white">{userLevel}</span>
+          <span className="text-lg font-bold text-gray-800 dark:text-white">{getLevelLabel(userLevel)}</span>
         </button>
 
         {/* Coins Card (Matches Quiz Task Bar Coins) */}

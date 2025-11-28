@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Category, VocabularyWord, DailyGoal, DailyProgress } from '../types';
 import UserStats from './UserStats';
+import { DifficultyTabs } from './DifficultyTabs';
 import { 
   LiteratureIcon, ScienceIcon, TravelIcon, WorkIcon, 
   EmotionsIcon, FoodIcon, SocialIcon, TimeIcon, ArtIcon, FinanceIcon 
@@ -59,8 +59,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="p-4 sm:p-6 pb-24">
-      {/* Increased top margin (mt-14) on mobile to clear the fixed AI header bar */}
-      <div className="mb-8 mt-14 sm:mt-6 animate-fade-in-up">
+      {/* Level Buttons Section - Inserted here */}
+      <div className="mt-14 sm:mt-6 mb-6 animate-fade-in-up">
+        <DifficultyTabs />
+      </div>
+
+      {/* User Stats Section */}
+      <div className="mb-8 animate-fade-in-up">
         <UserStats 
           userName={userName}
           userPoints={userPoints}
