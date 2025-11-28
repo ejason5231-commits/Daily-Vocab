@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CloseIcon, SunIcon, MoonIcon, BellIcon, MicrophoneIcon, YouTubeIcon, FacebookIcon, StarIcon } from './icons';
+import { CloseIcon, SunIcon, MoonIcon, BellIcon, MicrophoneIcon, YouTubeIcon, FacebookIcon, StarIcon, TelegramIcon } from './icons';
 import { DailyGoal } from '../types';
 
 interface SidebarProps {
@@ -163,8 +163,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               >
                 <FacebookIcon className="w-8 h-8" />
               </a>
+              <a 
+                href="https://t.me/LearnEnglishwithEric" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-14 h-14 bg-white rounded-full shadow-md text-[#229ED9] border border-gray-100 hover:bg-sky-50 transition-all transform hover:scale-110"
+                aria-label="Telegram Channel"
+              >
+                <TelegramIcon className="w-8 h-8" />
+              </a>
             </div>
-            <p className="text-xs text-gray-400">Daily Vocab v1.0 by Eric AppDev</p>
+            <p className="text-xs text-gray-400">Daily Vocab by English with Eric</p>
           </div>
         </div>
       </div>
