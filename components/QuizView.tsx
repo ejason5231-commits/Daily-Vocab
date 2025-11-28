@@ -129,6 +129,37 @@ const MapZones = ({ nodeSpacing, topPadding }: { nodeSpacing: number, topPadding
     );
 };
 
+const DifficultyTabs = () => {
+    const levels = [
+        { id: 1, label: 'A1-A2', unlocked: true },
+        { id: 2, label: 'B1', unlocked: false },
+        { id: 3, label: 'B2', unlocked: false },
+        { id: 4, label: 'C1', unlocked: false },
+    ];
+
+    return (
+        <div className="w-full flex justify-center space-x-2 py-2 px-4 bg-[#e6d2aa] dark:bg-gray-800/90 backdrop-blur-sm border-b border-[#c2a67a] dark:border-gray-700 shadow-sm z-40">
+            {levels.map((lvl) => (
+                <button
+                    key={lvl.id}
+                    className={`
+                        relative flex-1 py-2 px-1 rounded-lg text-xs sm:text-sm font-bold shadow-md transition-all transform active:scale-95
+                        ${lvl.unlocked 
+                            ? 'bg-[#123499] text-white border-b-4 border-[#0a1f5e]' 
+                            : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-b-4 border-gray-400 dark:border-gray-900 cursor-not-allowed'}
+                    `}
+                    disabled={!lvl.unlocked}
+                >
+                    <div className="flex items-center justify-center">
+                        {!lvl.unlocked && <LockIcon className="w-3 h-3 mr-1 opacity-70" />}
+                        {lvl.label}
+                    </div>
+                </button>
+            ))}
+        </div>
+    );
+};
+
 const QuizView: React.FC<QuizViewProps> = ({ 
   words, 
   onQuizComplete, 
@@ -374,7 +405,7 @@ const QuizView: React.FC<QuizViewProps> = ({
   if (quizState === 'level_select') {
     const nodeSpacing = 140;
     const bottomPadding = 250; 
-    const topPadding = 180;
+    const topPadding = 200; // Increased to accommodate the Difficulty Tabs
     const mapHeight = Math.max(window.innerHeight, totalLevels * nodeSpacing + bottomPadding + topPadding);
 
     // Generate path points
@@ -469,11 +500,16 @@ const QuizView: React.FC<QuizViewProps> = ({
                 </div>
             </div>
 
+            {/* Difficulty Tabs - Positioned right below the header */}
+            <div className="absolute top-[80px] pt-[env(safe-area-inset-top)] w-full z-40">
+                <DifficultyTabs />
+            </div>
+
             {/* Scrollable Map Area */}
             <div 
                 ref={scrollContainerRef}
                 className="w-full h-full overflow-y-auto relative no-scrollbar"
-                style={{ paddingTop: '80px' }} 
+                style={{ paddingTop: '120px' }} 
             >
                 <div style={{ height: mapHeight }} className="w-full relative">
                     
