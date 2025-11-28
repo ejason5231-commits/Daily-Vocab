@@ -1,36 +1,56 @@
 
 import React, { useState } from 'react';
+import { 
+  getAuth, 
+  signInWithPopup, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword 
+} from 'firebase/auth';
+import { app, googleProvider, facebookProvider } from '../firebase';
 import { CloseIcon, GoogleIcon, FacebookIcon, DailyVocabLogo } from './icons';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (email: string) => void;
-  onGoogleLogin?: () => void; // optional handler for Google sign-in
+  onLoginSuccess: (user: any) => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, onGoogleLogin }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const auth = getAuth(app);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      onLogin(email.split('@')[0]); // Use part of email as username for demo
+    setError(null);
+    try {
+      let userCredential;
+      if (isLoginView) {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      }
+      onLoginSuccess(userCredential.user);
       onClose();
+    } catch (error: any) {
+      setError(error.message);
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    if (provider === 'Google' && onGoogleLogin) {
-      onGoogleLogin();
-      return;
+  const handleSocialLogin = async (provider: 'Google' | 'Facebook') => {
+    const authProvider = provider === 'Google' ? googleProvider : facebookProvider;
+    try {
+      const result = await signInWithPopup(auth, authProvider);
+      onLoginSuccess(result.user);
+      onClose();
+    } catch (error: any) {
+      setError(error.message);
     }
-    onLogin(provider === 'Google' ? 'Google User' : 'Facebook User');
-    onClose();
   };
 
   return (
@@ -60,10 +80,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, onGoo
           </p>
         </div>
 
+        {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
+
         {/* Social Login Buttons */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <button
-            onClick={() => onGoogleLogin ? onGoogleLogin() : handleSocialLogin('Google')}
+            onClick={() => handleSocialLogin('Google')}
             className="flex items-center justify-center py-2.5 px-4 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             <GoogleIcon className="w-5 h-5 mr-2" />
@@ -125,7 +147,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin, onGoo
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {isLoginView ? "Don't have an account? " : "Already have an account? "}
             <button
-              onClick={() => setIsLoginView(!isLoginView)}
+              onClick={() => {
+                setIsLoginView(!isLoginView);
+                setError(null); // Clear error on view toggle
+              }}
               className="font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400 transition-colors"
             >
               {isLoginView ? 'Sign up' : 'Log in'}

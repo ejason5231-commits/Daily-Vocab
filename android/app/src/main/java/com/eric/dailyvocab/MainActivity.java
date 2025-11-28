@@ -59,7 +59,6 @@ public class MainActivity extends BridgeActivity {
         ).launch(Manifest.permission.RECORD_AUDIO);
 
         registerPlugin(AdMobPlugin.class);
-        registerPlugin(FirebaseLoginPlugin.class);
 
         MobileAds.initialize(this, initializationStatus -> {});
 
