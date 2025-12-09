@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Category, VocabularyWord, DailyGoal, DailyProgress } from '../types';
 import UserStats from './UserStats';
 import { DifficultyTabs } from './DifficultyTabs';
 import { 
   LiteratureIcon, ScienceIcon, TravelIcon, WorkIcon, 
-  EmotionsIcon, FoodIcon, SocialIcon, TimeIcon, ArtIcon, FinanceIcon 
+  EmotionsIcon, FoodIcon, SocialIcon, TimeIcon, ArtIcon, FinanceIcon, TreeIcon
 } from './icons';
 
 interface DashboardProps {
@@ -18,6 +19,8 @@ interface DashboardProps {
   dailyProgress: DailyProgress;
   userName: string;
   userPoints: number;
+  selectedDifficulty: string;
+  onSelectDifficulty: (level: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -31,6 +34,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   dailyProgress,
   userName,
   userPoints,
+  selectedDifficulty,
+  onSelectDifficulty
 }) => {
   const getCategoryProgress = (categoryName: string) => {
     const wordsInCategory = wordCache[categoryName] || [];
@@ -44,27 +49,52 @@ const Dashboard: React.FC<DashboardProps> = ({
   const getCategoryIcon = (name: string) => {
     switch (name) {
       case 'Literature': return <LiteratureIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Science': return <ScienceIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Travel': return <TravelIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Work': return <WorkIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Emotions': return <EmotionsIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Food': return <FoodIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Social': return <SocialIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Science': 
+      case 'Health':
+      case 'Technology': 
+        return <ScienceIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Travel': 
+      case 'Travel & Holidays':
+        return <TravelIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Work': 
+      case 'Work & Study':
+        return <WorkIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Emotions': 
+      case 'Opinions & Emotions':
+        return <EmotionsIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Food': 
+      case 'Food & Restaurants':
+        return <FoodIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Social': 
+      case 'Social Life':
+        return <SocialIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       case 'Time': return <TimeIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Art': return <ArtIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
-      case 'Finance': return <FinanceIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Art': 
+      case 'Culture':
+        return <ArtIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Finance': 
+      case 'Shopping':
+        return <FinanceIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
+      case 'Environment': return <TreeIcon className="w-10 h-10 sm:w-12 sm:h-12" />;
       default: return <span className="text-3xl">{name[0]}</span>;
     }
   };
 
   return (
     <div className="p-4 sm:p-6 pb-24">
-      {/* Level Buttons Section - Inserted here */}
-      <div className="mt-14 sm:mt-6 mb-6 animate-fade-in-up">
-        <DifficultyTabs />
+      {/* Level Buttons Section */}
+      {/* mt-28 ensures it clears the header+AI bar on mobile. sm:mt-6 for desktop. */}
+      <div className="mt-28 sm:mt-6 mb-6 animate-fade-in-up">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Select Level</h3>
+            <DifficultyTabs 
+              selectedDifficulty={selectedDifficulty}
+              onSelectDifficulty={onSelectDifficulty}
+              userPoints={userPoints}
+            />
+          </div>
       </div>
 
-      {/* User Stats Section */}
       <div className="mb-8 animate-fade-in-up">
         <UserStats 
           userName={userName}
@@ -74,7 +104,9 @@ const Dashboard: React.FC<DashboardProps> = ({
         />
       </div>
 
-      <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4 animate-fade-in-up">Categories</h3>
+      <h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-4 animate-fade-in-up">
+        {selectedDifficulty === 'A1-A2' ? 'Beginner Categories' : 'Intermediate Categories'}
+      </h3>
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4 animate-fade-in-up">
         {categories.map((category, index) => {

@@ -13,7 +13,7 @@ import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
 import LoginModal from './components/LoginModal'; 
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
-import { CATEGORIES, VOCABULARY_DATA } from './constants';
+import { CATEGORIES, CATEGORIES_B1, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
@@ -56,7 +56,13 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
   // Data State
-  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('A1-A2');
+  
+  // Select Category List based on difficulty
+  const activeCategories = useMemo(() => {
+      return selectedDifficulty === 'B1' ? CATEGORIES_B1 : CATEGORIES;
+  }, [selectedDifficulty]);
+
   const [wordCache, setWordCache] = useState<Record<string, VocabularyWord[]>>(VOCABULARY_DATA);
   const [learnedWords, setLearnedWords] = useState<Set<string>>(() => {
     const stored = window.localStorage.getItem('learnedWords');
@@ -85,7 +91,8 @@ const App: React.FC = () => {
   // Gamification State
   const [userPoints, setUserPoints] = useState<number>(() => {
       const stored = window.localStorage.getItem('userPoints');
-      return stored ? parseInt(stored, 10) : 0;
+      const points = stored ? parseInt(stored, 10) : 3000;
+      return points < 3000 ? 3000 : points;
   });
   
   const [userCoins, setUserCoins] = useState<number>(() => {
@@ -383,7 +390,7 @@ const App: React.FC = () => {
     setGenerationError(null);
     try {
       // 1. Check if it matches a built-in category
-      const existingCategory = categories.find(c => c.name.toLowerCase() === topic.toLowerCase());
+      const existingCategory = activeCategories.find(c => c.name.toLowerCase() === topic.toLowerCase());
       if (existingCategory) {
         setSelectedCategory(existingCategory);
         setCurrentView('category');
@@ -563,7 +570,7 @@ const App: React.FC = () => {
         >
             {currentView === 'dashboard' && (
             <Dashboard 
-                categories={categories}
+                categories={activeCategories}
                 onSelectCategory={handleSelectCategory}
                 wordCache={wordCache}
                 learnedWords={learnedWords}
@@ -573,6 +580,8 @@ const App: React.FC = () => {
                 dailyProgress={dailyProgress}
                 userName={userName}
                 userPoints={userPoints}
+                selectedDifficulty={selectedDifficulty}
+                onSelectDifficulty={setSelectedDifficulty}
             />
             )}
 
