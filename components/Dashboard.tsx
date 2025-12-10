@@ -21,7 +21,6 @@ interface DashboardProps {
   userPoints: number;
   selectedDifficulty: string;
   onSelectDifficulty: (level: string) => void;
-  onGoalComplete?: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ 
@@ -36,8 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   userName,
   userPoints,
   selectedDifficulty,
-  onSelectDifficulty,
-  onGoalComplete
+  onSelectDifficulty
 }) => {
   const getCategoryProgress = (categoryName: string) => {
     const wordsInCategory = wordCache[categoryName] || [];
@@ -84,9 +82,9 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="p-4 sm:p-6 pb-24">
-      {/* Level Buttons Section - Sticky */}
-      {/* Sticky positioning sticks below the taskbar; mt-28 on mobile clears header+AI bar initially */}
-      <div className="sticky top-0 z-30 pt-28 sm:pt-6 mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6 bg-gradient-to-b from-gray-50 dark:from-gray-900 to-transparent pb-4 animate-fade-in-up">
+      {/* Level Buttons Section */}
+      {/* Adjusted margin top to be smaller (mt-12) to reduce whitespace while still clearing header */}
+      <div className="mt-12 sm:mt-6 mb-6 animate-fade-in-up">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Select Level</h3>
             <DifficultyTabs 
@@ -102,8 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           userName={userName}
           userPoints={userPoints}
           goal={dailyGoal} 
-          progress={dailyProgress}
-          onGoalComplete={onGoalComplete}
+          progress={dailyProgress} 
         />
       </div>
 
