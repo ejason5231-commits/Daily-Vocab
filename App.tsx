@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -8,7 +8,7 @@ import QuizView from './components/QuizView';
 import AiCreateView from './components/AiCreateView';
 import LeaderboardView from './components/LeaderboardView';
 import ProfileView from './components/ProfileView';
-import PodcastView from './components/PodcastView'; 
+import PodcastView from './components/PodcastView'; // Added Import
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
@@ -19,66 +19,6 @@ import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
 import { SparklesIcon } from './components/icons';
-import microphoneService, { hasMicrophonePermission, getIsMiui } from './services/microphoneService';
-import OpenSettingsModal from './components/OpenSettingsModal';
-import UpdateModal from './components/UpdateModal';
-import { checkForUpdate, openPlayStoreUpdate } from './services/updateService';
-import { AdMob, RewardInterstitialAdPluginEvents } from "@capacitor-community/admob";
-
-// PRODUCTION AD UNIT IDs (active)
-export const INTERSTITIAL_ID = "ca-app-pub-3055032812859066/5534475851"; 
-export const REWARDED_INTERSTITIAL_ID = "ca-app-pub-3055032812859066/1105110403"; 
-
-let lastInterstitialTime = 0;
-
-const canShowInterstitial = () => {
-  const now = Date.now();
-  return now - lastInterstitialTime >= 45000;
-};
-
-export async function showInterstitial() {
-  if (!canShowInterstitial()) {
-    console.log("Interstitial cooldown active");
-    return;
-  }
-
-  try {
-    console.log("Preparing interstitial ad...");
-    await AdMob.prepareInterstitial({
-      adId: INTERSTITIAL_ID,
-      isTesting: false, 
-    });
-
-    console.log("Showing interstitial ad...");
-    await AdMob.showInterstitial();
-    lastInterstitialTime = Date.now();
-    console.log("Interstitial ad shown successfully");
-
-  } catch (err) {
-    console.error("Interstitial error:", err);
-  }
-}
-
-export async function showRewardInterstitial() {
-  try {
-    console.log("Preparing rewarded-interstitial ad...");
-    await AdMob.prepareRewardInterstitialAd({
-      adId: REWARDED_INTERSTITIAL_ID,
-      isTesting: false, 
-    });
-
-    AdMob.addListener(RewardInterstitialAdPluginEvents.Rewarded, (reward) => {
-      console.log("User earned reward:", reward);
-    });
-
-    console.log("Showing rewarded-interstitial ad...");
-    await AdMob.showRewardInterstitialAd();
-    console.log("Rewarded-interstitial ad shown successfully");
-
-  } catch (err) {
-    console.error("Rewarded Interstitial error:", err);
-  }
-}
 
 interface QuizCompletionResult {
   correctlyAnsweredWords: string[];
@@ -199,14 +139,9 @@ const App: React.FC = () => {
 
   const [badgeNotification, setBadgeNotification] = useState<Badge | null>(null);
   const [levelUpNotification, setLevelUpNotification] = useState<{level: number, categoryName: string} | null>(null);
-  const [isOpenSettingsModalOpen, setIsOpenSettingsModalOpen] = useState(false);
-  const [isMiuiDevice, setIsMiuiDevice] = useState(false);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<{ isForceUpdate: boolean; latestVersion: string } | null>(null);
 
   const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
   const [quizStartLevel, setQuizStartLevel] = useState<number | null>(null);
@@ -223,23 +158,6 @@ const App: React.FC = () => {
     document.documentElement.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
-
-  // Initialize AdMob on first mount
-  useEffect(() => {
-    const initAdmob = async () => {
-      try {
-        await AdMob.initialize({
-          requestTrackingAuthorization: true,
-          initializeForTesting: false, 
-        });
-        console.log('AdMob initialized successfully');
-      } catch (err) {
-        console.error('AdMob initialization error:', err);
-      }
-    };
-
-    initAdmob();
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('userName', userName);
@@ -297,34 +215,6 @@ const App: React.FC = () => {
     });
   }, [dailyProgress]);
 
-  // Interstitial ad throttling: show on screen switches (including returning to home)
-  const prevViewRef = useRef(currentView);
-  const lastInterstitialShownRef = useRef<number>(0);
-  const nextInterstitialAllowedRef = useRef<number>(0);
-
-  useEffect(() => {
-    // only act when view actually changes
-    if (prevViewRef.current === currentView) return;
-
-    const now = Date.now();
-    if (now >= nextInterstitialAllowedRef.current) {
-      (async () => {
-        try {
-          await showInterstitial();
-        } catch (e) {
-          // ignore ad errors
-        }
-      })();
-
-      lastInterstitialShownRef.current = now;
-      // Random cooldown between 45s and 120s
-      const cooldown = 45000 + Math.floor(Math.random() * (120000 - 45000 + 1));
-      nextInterstitialAllowedRef.current = now + cooldown;
-    }
-
-    prevViewRef.current = currentView;
-  }, [currentView]);
-
   useEffect(() => {
     localStorage.setItem('userStreak', userStreak.toString());
   }, [userStreak]);
@@ -332,44 +222,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('lastActiveDate', lastActiveDate);
   }, [lastActiveDate]);
-
-  // Check microphone permission at startup and set UI state
-  useEffect(() => {
-    (async () => {
-      try {
-        const granted = await hasMicrophonePermission();
-        setMicrophoneEnabled(granted);
-      } catch (err) {
-        console.error('Error checking microphone permission:', err);
-      }
-      try {
-        const res = await getIsMiui?.();
-        if (res && res.isMiui) setIsMiuiDevice(true);
-      } catch (e) {
-        // ignore
-      }
-    })();
-  }, []);
-
-  // Check for app updates on startup
-  useEffect(() => {
-    const checkUpdate = async () => {
-      try {
-        const result = checkForUpdate();
-        if (result.needsUpdate) {
-          setUpdateInfo({
-            isForceUpdate: result.isForceUpdate,
-            latestVersion: result.latestVersion,
-          });
-          setShowUpdateModal(true);
-        }
-      } catch (err) {
-        console.error('Error checking for updates:', err);
-      }
-    };
-
-    checkUpdate();
-  }, []);
 
   // --- Handlers ---
 
@@ -402,17 +254,6 @@ const App: React.FC = () => {
       });
       updateDailyProgress('words');
       addCoins(POINTS.LEARN_WORD); 
-      // If the user crossed a 20-words milestone, show rewarded-interstitial
-      const newCount = learnedWords.size + 1;
-      if (newCount % 20 === 0) {
-        (async () => {
-          try {
-            await showRewardInterstitial();
-          } catch (e) {
-            // ignore
-          }
-        })();
-      }
     }
   };
 
@@ -548,14 +389,6 @@ const App: React.FC = () => {
     setLevelUpNotification(null);
   };
 
-  const handleStartNextLevel = (level: number) => {
-    // Directly start the next level without ads
-    setQuizStartLevel(level);
-    setCurrentView('quiz');
-    setActiveTab('quiz');
-    setLevelUpNotification(null);
-  };
-
   const handleAiGenerate = async (topic: string) => {
     setIsGenerating(true);
     setGenerationError(null);
@@ -582,14 +415,6 @@ const App: React.FC = () => {
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
-
-      (async () => {
-        try {
-          await showRewardInterstitial();
-        } catch (e) {
-          // ignore
-        }
-      })();
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -652,23 +477,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden">
       
-      {showUpdateModal && updateInfo && (
-        <UpdateModal
-          isOpen={showUpdateModal}
-          isForceUpdate={updateInfo.isForceUpdate}
-          latestVersion={updateInfo.latestVersion}
-          currentVersion="0.0.1"
-          onUpdate={async () => {
-            try {
-              await openPlayStoreUpdate();
-            } catch (err) {
-              console.error('Failed to open Play Store:', err);
-            }
-          }}
-          onSkip={() => setShowUpdateModal(false)}
-        />
-      )}
-
       {isGenerating && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
           <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-2xl flex flex-row items-center gap-4 border border-gray-100 dark:border-gray-700 transform transition-all scale-100">
@@ -702,28 +510,16 @@ const App: React.FC = () => {
         notificationsEnabled={notificationsEnabled}
         onNotificationsToggle={() => setNotificationsEnabled(!notificationsEnabled)}
         microphoneEnabled={microphoneEnabled}
-        onMicrophoneToggle={async () => {
-          if (!microphoneEnabled) {
-            try {
-              const ok = await microphoneService.requestMicrophoneAccess();
-              if (ok) {
-                setMicrophoneEnabled(true);
-              } else {
-                const micSettingsShown = window.localStorage.getItem('micSettingsShown') === 'true';
-                if (!micSettingsShown) {
-                  window.localStorage.setItem('micSettingsShown', 'true');
-                  setIsOpenSettingsModalOpen(true);
-                } else {
-                  try { await microphoneService.openAppSettings(); } catch (e) { console.error('Failed to open settings', e); }
-                }
-              }
-            } catch (e) {
-              console.error('Error requesting microphone:', e);
-              setIsOpenSettingsModalOpen(true);
+        onMicrophoneToggle={() => {
+            if (!microphoneEnabled) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+                    setMicrophoneEnabled(true);
+                }).catch(() => {
+                    alert("Could not access microphone.");
+                });
+            } else {
+                setMicrophoneEnabled(false);
             }
-          } else {
-            setMicrophoneEnabled(false);
-          }
         }}
         dailyGoal={dailyGoal}
         onGoalChange={setDailyGoal}
@@ -742,27 +538,6 @@ const App: React.FC = () => {
         userName={userName}
         onLoginClick={() => setIsLoginModalOpen(true)}
         onLogoutClick={handleLogout}
-      />
-      
-      <OpenSettingsModal
-        isOpen={isOpenSettingsModalOpen}
-        isMiui={isMiuiDevice}
-        onOpenSettings={async () => {
-          try {
-            await microphoneService.openAppSettings();
-          } catch (e) {
-            console.error('Failed to open settings', e);
-            try { await microphoneService.openAppSettings(); } catch (nested) { console.error('Failed fallback open', nested); }
-          }
-        }}
-        onCancel={() => setIsOpenSettingsModalOpen(false)}
-        onCheckPermission={async () => {
-          try {
-            const granted = await hasMicrophonePermission();
-            setMicrophoneEnabled(!!granted);
-            if (granted) setIsOpenSettingsModalOpen(false);
-          } catch (e) { console.error('Error checking permission:', e); }
-        }}
       />
 
       {showHeader && (
@@ -926,7 +701,6 @@ const App: React.FC = () => {
       <LevelUpNotification 
         notification={levelUpNotification}
         onDismiss={handleLevelUpDismiss}
-        onStartNextLevel={handleStartNextLevel}
       />
     </div>
   );
