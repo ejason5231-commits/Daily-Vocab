@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
 import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, MicrophoneIcon, StopIcon, PlayIcon } from './icons';
 import { playAudio } from '../services/audioService';
+import microphoneService from '../services/microphoneService';
 
 interface FlashcardProps {
   wordData: VocabularyWord;
@@ -74,6 +75,16 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
     }
 
     try {
+      const ok = await microphoneService.requestMicrophoneAccess();
+      if (!ok) {
+        // Open app settings for user to enable microphone permissions
+        try {
+          await microphoneService.openAppSettings();
+        } catch (e) {
+          console.error('Failed to open settings:', e);
+        }
+        return;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const options = supportedMimeType ? { mimeType: supportedMimeType } : {};
       const mediaRecorder = new MediaRecorder(stream, options);

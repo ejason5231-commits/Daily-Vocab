@@ -7,13 +7,14 @@ import CategoryView from './components/CategoryView';
 import QuizView from './components/QuizView';
 import AiCreateView from './components/AiCreateView';
 import LeaderboardView from './components/LeaderboardView';
-import ProfileView from './components/ProfileView'; // Added Import
+import ProfileView from './components/ProfileView';
+import PodcastView from './components/PodcastView'; // Added Import
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
 import LoginModal from './components/LoginModal'; 
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
-import { CATEGORIES, CATEGORIES_B1, VOCABULARY_DATA } from './constants';
+import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
@@ -29,9 +30,9 @@ const getTodayString = () => new Date().toISOString().split('T')[0];
 
 const App: React.FC = () => {
   // Navigation State
-  const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey' | 'profile'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey' | 'profile' | 'podcast'>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'podcast' | 'profile'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
@@ -58,9 +59,8 @@ const App: React.FC = () => {
   // Data State
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('A1-A2');
   
-  // Select Category List based on difficulty
   const activeCategories = useMemo(() => {
-      return selectedDifficulty === 'B1' ? CATEGORIES_B1 : CATEGORIES;
+      return CATEGORIES;
   }, [selectedDifficulty]);
 
   const [wordCache, setWordCache] = useState<Record<string, VocabularyWord[]>>(VOCABULARY_DATA);
@@ -73,26 +73,21 @@ const App: React.FC = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   
-  // Transient State for AI Generated Words (Not persisted to app state)
   const [aiGeneratedWords, setAiGeneratedWords] = useState<VocabularyWord[]>([]);
   
-  // Category-specific unlocked levels
   const [unlockedLevels, setUnlockedLevels] = useState<Record<string, number>>(() => {
       const stored = window.localStorage.getItem('unlockedLevels');
       return stored ? JSON.parse(stored) : {};
   });
 
-  // Global Journey unlocked level
   const [globalUnlockedLevel, setGlobalUnlockedLevel] = useState<number>(() => {
       const stored = window.localStorage.getItem('globalUnlockedLevel');
       return stored ? parseInt(stored, 10) : 1;
   });
 
-  // Gamification State
   const [userPoints, setUserPoints] = useState<number>(() => {
       const stored = window.localStorage.getItem('userPoints');
-      const points = stored ? parseInt(stored, 10) : 3000;
-      return points < 3000 ? 3000 : points;
+      return stored ? parseInt(stored, 10) : 0;
   });
   
   const [userCoins, setUserCoins] = useState<number>(() => {
@@ -100,7 +95,6 @@ const App: React.FC = () => {
       return stored ? parseInt(stored, 10) : 0;
   });
 
-  // Streak State
   const [userStreak, setUserStreak] = useState<number>(() => {
       const stored = window.localStorage.getItem('userStreak');
       return stored ? parseInt(stored, 10) : 0;
@@ -117,9 +111,25 @@ const App: React.FC = () => {
     const stored = window.localStorage.getItem('dailyGoal');
     return stored ? JSON.parse(stored) : { type: 'words', value: 40 };
   });
+  
+  // -- NEW: Progress History Tracking --
+  const [progressHistory, setProgressHistory] = useState<Record<string, DailyProgress>>(() => {
+      const stored = window.localStorage.getItem('progressHistory');
+      return stored ? JSON.parse(stored) : {};
+  });
+
   const [dailyProgress, setDailyProgress] = useState<DailyProgress>(() => {
-    const stored = window.localStorage.getItem('dailyProgress');
     const today = getTodayString();
+    
+    // First try getting from history state initialized above
+    const storedHistory = window.localStorage.getItem('progressHistory');
+    if (storedHistory) {
+        const historyMap = JSON.parse(storedHistory);
+        if (historyMap[today]) return historyMap[today];
+    }
+
+    // Fallback/Legacy
+    const stored = window.localStorage.getItem('dailyProgress');
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed.date === today) return parsed;
@@ -127,20 +137,16 @@ const App: React.FC = () => {
     return { date: today, wordsLearnedCount: 0, quizzesCompletedCount: 0 };
   });
 
-  // Notification Queues
   const [badgeNotification, setBadgeNotification] = useState<Badge | null>(null);
   const [levelUpNotification, setLevelUpNotification] = useState<{level: number, categoryName: string} | null>(null);
 
-  // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  // Quiz State for Category Drill-down
   const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
   const [quizStartLevel, setQuizStartLevel] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState<string>('');
   
-  // Global Journey Words (Flattened)
   const allJourneyWords = useMemo(() => {
     return (Object.values(wordCache) as VocabularyWord[][]).reduce((acc, val) => acc.concat(val), [] as VocabularyWord[]);
   }, [wordCache]);
@@ -197,8 +203,16 @@ const App: React.FC = () => {
     localStorage.setItem('dailyGoal', JSON.stringify(dailyGoal));
   }, [dailyGoal]);
 
+  // Save both dailyProgress (for quick access) and history (for calendar)
   useEffect(() => {
     localStorage.setItem('dailyProgress', JSON.stringify(dailyProgress));
+    
+    // Update history map
+    setProgressHistory(prev => {
+        const newHistory = { ...prev, [dailyProgress.date]: dailyProgress };
+        localStorage.setItem('progressHistory', JSON.stringify(newHistory));
+        return newHistory;
+    });
   }, [dailyProgress]);
 
   useEffect(() => {
@@ -212,7 +226,6 @@ const App: React.FC = () => {
   // --- Handlers ---
 
   const handleLogin = (name: string) => {
-    // This is the manual/fallback login handler
     setUserName(name);
     setIsLoggedIn(true);
     setIsLoginModalOpen(false);
@@ -222,7 +235,6 @@ const App: React.FC = () => {
     setIsLoggedIn(false);
     setUserName("Learner");
     setIsSidebarOpen(false);
-    // Optionally reset other states here
   };
 
   const handleToggleLearned = (word: string) => {
@@ -240,24 +252,20 @@ const App: React.FC = () => {
         next.add(word);
         return next;
       });
-      // Side effects performed outside the state setter to ensure reliability
       updateDailyProgress('words');
-      // REWARD: Learning words gives COINS
       addCoins(POINTS.LEARN_WORD); 
     }
   };
 
   const updateStreak = () => {
     const today = getTodayString();
-    if (lastActiveDate === today) return; // Already updated streak for today
+    if (lastActiveDate === today) return; 
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayString = yesterday.toISOString().split('T')[0];
 
     let newStreak = 1;
-    // If last activity was yesterday, increment streak.
-    // Otherwise (last activity was before yesterday or never), reset to 1.
     if (lastActiveDate === yesterdayString) {
         newStreak = userStreak + 1;
     }
@@ -298,7 +306,6 @@ const App: React.FC = () => {
     setUserCoins(prev => prev + amount);
   };
   
-  // Memoize counts to avoid recalculating in addPoints
   const learnedCountMemo = useMemo(() => learnedWords.size, [learnedWords]);
   const masteredCountMemo = useMemo(() => masteredWords.size, [masteredWords]);
 
@@ -327,7 +334,6 @@ const App: React.FC = () => {
   const handleSelectCategory = (category: Category) => {
     setSelectedCategory(category);
     setCurrentView('category');
-    // We remain in the home tab
   };
 
   const handleStartQuiz = (words: VocabularyWord[], title: string, startLevel: number = 1) => {
@@ -356,7 +362,6 @@ const App: React.FC = () => {
   };
 
   const handleCorrectAnswer = () => {
-    // REWARD: Quizzes give XP for every correct answer
     addPoints(1); 
   };
 
@@ -370,7 +375,6 @@ const App: React.FC = () => {
     });
   };
 
-  // New function to handle intermediate saves
   const handleSaveProgress = (answeredWords: string[]) => {
     if (answeredWords.length === 0) return;
     
@@ -389,7 +393,6 @@ const App: React.FC = () => {
     setIsGenerating(true);
     setGenerationError(null);
     try {
-      // 1. Check if it matches a built-in category
       const existingCategory = activeCategories.find(c => c.name.toLowerCase() === topic.toLowerCase());
       if (existingCategory) {
         setSelectedCategory(existingCategory);
@@ -399,13 +402,9 @@ const App: React.FC = () => {
         return;
       }
 
-      // 2. If new, generate words
       const newWords = await getVocabularyForCategory(topic);
-      
-      // 3. Set transient state (DO NOT update persistent app state like wordCache or categories)
       setAiGeneratedWords(newWords);
 
-      // Create a temporary category object for view
       const tempCategory: Category = {
           name: topic,
           emoji: '✨',
@@ -416,7 +415,6 @@ const App: React.FC = () => {
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
-      // REMOVED: addPoints(POINTS.GENERATE_CATEGORY);
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -426,54 +424,59 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-      setIsQuizActive(false); // Reset quiz active state
-      setAiGeneratedWords([]); // Clear transient AI words on back navigation
+      setIsQuizActive(false); 
+      setAiGeneratedWords([]); 
       
       if (currentView === 'quiz') {
-          // Return to category view
           if (selectedCategory) {
             setCurrentView('category');
           } else {
             setCurrentView('dashboard');
           }
-      } else if (currentView === 'category') {
+      } else if (currentView === 'category' || currentView === 'leaderboard' || currentView === 'ai_create' || currentView === 'podcast') {
           setCurrentView('dashboard');
-      } else if (currentView === 'leaderboard') {
-          setCurrentView('dashboard');
-      } else if (currentView === 'ai_create') {
-          setCurrentView('dashboard'); // Handle back from AI create if accessible
+          setActiveTab('home');
       }
   };
 
-  const handleTabChange = (tab: 'home' | 'quiz' | 'profile') => {
+  const handleTabChange = (tab: 'home' | 'quiz' | 'podcast' | 'profile') => {
       setActiveTab(tab);
-      setIsQuizActive(false); // Reset quiz active state
+      setIsQuizActive(false); 
 
       if (tab === 'home') {
           setCurrentView('dashboard');
           setSelectedCategory(null);
-          setAiGeneratedWords([]); // Clear AI context when switching tabs
+          setAiGeneratedWords([]); 
       } else if (tab === 'quiz') {
           setCurrentView('quiz_journey');
           setSelectedCategory(null);
       } else if (tab === 'profile') {
           setCurrentView('profile');
           setSelectedCategory(null);
+      } else if (tab === 'podcast') {
+          setCurrentView('podcast');
+          setSelectedCategory(null);
       }
   };
 
   const { handleTouchStart, handleTouchMove, handleTouchEnd, swipeStyles } = useSwipeBack({
     onSwipeBack: handleBack,
-    enabled: (currentView === 'category' || currentView === 'quiz' || currentView === 'leaderboard')
+    enabled: (currentView === 'category' || currentView === 'quiz' || currentView === 'leaderboard' || currentView === 'podcast')
   });
 
-  // Show header only on non-quiz tabs and not in active quiz view
   const showHeader = activeTab !== 'quiz' && currentView !== 'quiz';
+
+  const getHeaderTitle = () => {
+      if (selectedCategory) return selectedCategory.name;
+      if (currentView === 'leaderboard') return 'Leaderboard';
+      if (currentView === 'profile') return 'My Profile';
+      if (currentView === 'podcast') return 'Podcast';
+      return 'Daily Vocab';
+  };
 
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden">
       
-      {/* AI Loading Overlay - Rectangular and Compact */}
       {isGenerating && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
           <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-2xl flex flex-row items-center gap-4 border border-gray-100 dark:border-gray-700 transform transition-all scale-100">
@@ -493,14 +496,12 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Login Modal */}
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
         onLogin={handleLogin} 
       />
 
-      {/* Sidebar - Fixed Overlay */}
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
@@ -539,13 +540,12 @@ const App: React.FC = () => {
         onLogoutClick={handleLogout}
       />
 
-      {/* Global Header - Fixed Top (Outside swipe container) */}
       {showHeader && (
         <Header 
-          showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create' && currentView !== 'profile'}
+          showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create' && currentView !== 'profile' && currentView !== 'quiz_journey'}
           onBack={handleBack}
           onMenu={() => setIsLoginModalOpen(true)} // Profile icon opens Login Modal directly
-          title={selectedCategory ? selectedCategory.name : (currentView === 'leaderboard' ? 'Leaderboard' : (currentView === 'profile' ? 'My Profile' : 'Daily Vocab'))}
+          title={getHeaderTitle()}
           showAiBar={currentView === 'dashboard'}
           userName={userName}
           profileImage={profileImage}
@@ -554,7 +554,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Main Content Wrapper - Handles Swipe Transform */}
       <div 
         className="w-full min-h-screen flex flex-col"
         onTouchStart={handleTouchStart}
@@ -588,7 +587,6 @@ const App: React.FC = () => {
             {currentView === 'category' && selectedCategory && (
             <CategoryView 
                 category={selectedCategory}
-                // Use cached words if exists (built-in), otherwise use transient AI words
                 words={wordCache[selectedCategory.name] || aiGeneratedWords}
                 learnedWords={learnedWords}
                 onToggleLearned={handleToggleLearned}
@@ -620,7 +618,7 @@ const App: React.FC = () => {
             <QuizView
                 words={allJourneyWords}
                 onQuizComplete={handleQuizComplete}
-                onQuizExit={() => {}} // No-op, sidebar only opens via menu button
+                onQuizExit={() => {}} 
                 title="Vocab Journey"
                 categoryName="Vocab Journey"
                 unlockedLevel={globalUnlockedLevel}
@@ -646,10 +644,14 @@ const App: React.FC = () => {
             <LeaderboardView userName={userName} userPoints={userPoints} />
             )}
 
+            {currentView === 'podcast' && (
+              <PodcastView />
+            )}
+
             {currentView === 'profile' && (
               <ProfileView 
                 userName={userName} 
-                userLevel={Math.floor(userPoints / 500) + 1} // Example level calc
+                userLevel={Math.floor(userPoints / 500) + 1} 
                 userPoints={userPoints}
                 userCoins={userCoins}
                 userStreak={userStreak}
@@ -659,18 +661,19 @@ const App: React.FC = () => {
                 onOpenSettings={() => setIsSidebarOpen(true)}
                 onShowLeaderboard={() => {
                    setCurrentView('leaderboard');
-                   setActiveTab('home'); // Switch back to home context for leaderboard
+                   setActiveTab('home'); 
                 }}
                 isLoggedIn={isLoggedIn}
                 onLogin={() => setIsLoginModalOpen(true)}
                 onLogout={handleLogout}
                 onNavigate={handleTabChange}
+                progressHistory={progressHistory}
+                dailyGoal={dailyGoal}
               />
             )}
         </main>
       </div>
 
-      {/* AI FAB - Bottom Right (Visible on Dashboard) positioned above BottomNavigation */}
       {currentView === 'dashboard' && (
         <button
             onClick={() => setCurrentView('ai_create')}
@@ -682,7 +685,6 @@ const App: React.FC = () => {
         </button>
       )}
 
-      {/* Bottom Navigation - Fixed Bottom (Outside transformed container to prevent moving) */}
       {!isQuizActive && (
         <BottomNavigation 
           currentTab={activeTab} 
@@ -691,7 +693,6 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* Notifications - Fixed Overlays */}
       <BadgeNotification 
         badge={badgeNotification} 
         onDismiss={() => setBadgeNotification(null)} 

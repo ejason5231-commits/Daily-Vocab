@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const MenuIcon = ({ className }: { className?: string }) => (
@@ -270,6 +269,13 @@ export const PodcastIcon = ({ className }: { className?: string }) => (
     <path d="M12 8 V16 M8 12 H16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
     <path d="M7 12 C7 9.23858 9.23858 7 12 7 C14.7614 7 17 9.23858 17 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-red-500"/>
     <rect x="10" y="9" width="4" height="6" rx="2" fill="currentColor" className="text-red-600"/>
+  </svg>
+);
+
+export const HeadphonesIcon = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 18v-6a9 9 0 0118 0v6" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z" />
   </svg>
 );
 

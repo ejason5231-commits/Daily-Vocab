@@ -2,32 +2,9 @@
 import React, { useState, useRef } from 'react';
 import { 
   StarIcon, CoinIcon, FireIcon, 
-  InviteIcon, TrophyIcon, AvatarIcon, PencilIcon, CameraIcon, LoginIcon, LogoutIcon
+  InviteIcon, TrophyIcon, AvatarIcon, PencilIcon, CameraIcon, LoginIcon, LogoutIcon, CloseIcon
 } from './icons';
-
-// --- CONFIGURATION: EDIT PODCAST THUMBNAILS HERE ---
-const PODCAST_THUMBNAILS = [
-    { 
-        id: 1, 
-        title: "Meet Someone & Talk About Weather", 
-        // YouTube Thumbnail URL format: https://img.youtube.com/vi/[VIDEO_ID]/hqdefault.jpg
-        image: "https://img.youtube.com/vi/pwAo98xsOv8/hqdefault.jpg", 
-        url: "https://youtu.be/pwAo98xsOv8"
-    },
-    { 
-        id: 2, 
-        title: "Asking for Help", 
-        image: "https://img.youtube.com/vi/1dj3QI1Z5kI/hqdefault.jpg", 
-        url: "https://youtu.be/1dj3QI1Z5kI"
-    },
-    { 
-        id: 3, 
-        title: "Travel English", 
-        image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=500&q=60", // Travel
-        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
-    }
-];
-// ---------------------------------------------------
+import { DailyGoal, DailyProgress } from '../types';
 
 interface ProfileViewProps {
   userName: string;
@@ -43,13 +20,15 @@ interface ProfileViewProps {
   isLoggedIn: boolean;
   onLogin: () => void;
   onLogout: () => void;
-  onNavigate?: (tab: 'home' | 'quiz' | 'profile') => void;
+  onNavigate?: (tab: 'home' | 'quiz' | 'podcast' | 'profile') => void;
+  progressHistory: Record<string, DailyProgress>;
+  dailyGoal: DailyGoal;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ 
   userName, 
   userLevel, 
-  userPoints,
+  userPoints, 
   userCoins,
   userStreak,
   profileImage,
@@ -60,7 +39,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
   isLoggedIn,
   onLogin,
   onLogout,
-  onNavigate
+  onNavigate,
+  progressHistory,
+  dailyGoal
 }) => {
   // Edit Name State
   const [isEditingName, setIsEditingName] = useState(false);
@@ -122,10 +103,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     setShowLogoutConfirm(false);
   };
 
-  const handlePodcastClick = (url: string) => {
-      window.open(url, '_blank');
-  };
-
   const getLevelLabel = (level: number): string => {
     if (level <= 1) return "A1-A2";
     if (level === 2) return "B1";
@@ -133,8 +110,52 @@ const ProfileView: React.FC<ProfileViewProps> = ({
     return "C1"; // Level 4 and above
   };
 
+  // --- Calendar Widget Logic ---
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); // 0 is Sunday
+  
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
+
+  const isGoalMet = (dateStr: string) => {
+      const progress = progressHistory[dateStr];
+      if (!progress) return false;
+      if (dailyGoal.type === 'words') return progress.wordsLearnedCount >= dailyGoal.value;
+      return progress.quizzesCompletedCount >= dailyGoal.value;
+  };
+
+  const getDayClass = (day: number) => {
+      // Use local date string construction to avoid timezone issues for simple checking
+      const date = new Date(currentYear, currentMonth, day);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${d}`;
+
+      const isToday = day === today.getDate();
+      const met = isGoalMet(dateStr);
+      
+      let classes = "w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium transition-all relative ";
+      
+      if (met) {
+          classes += "bg-green-500 text-white shadow-md shadow-green-200 dark:shadow-none ";
+      } else if (isToday) {
+          classes += "bg-blue-100 text-blue-600 border-2 border-blue-500 font-bold ";
+      } else {
+          classes += "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 ";
+      }
+      return { classes, dateStr };
+  };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"];
+
   return (
-    <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 p-6 pb-24 relative">
+    <div className="min-h-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 px-4 pt-1 pb-24 relative">
       
       {/* Hidden File Input */}
       <input 
@@ -204,11 +225,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       )}
 
-      {/* Header / User Info */}
-      <div className="flex flex-col items-center mb-8 animate-fade-in-up">
+      {/* Header / User Info - Compact Layout */}
+      <div className="flex flex-col items-center mb-4 animate-fade-in-up">
         {/* Avatar Section */}
         <div 
-            className="w-24 h-24 mb-4 rounded-full bg-white dark:bg-gray-700 shadow-lg flex items-center justify-center p-1 relative cursor-pointer group"
+            className="w-16 h-16 mb-2 rounded-full bg-white dark:bg-gray-700 shadow-lg flex items-center justify-center p-1 relative cursor-pointer group"
             onClick={handleImageClick}
         >
            <div className="w-full h-full rounded-full overflow-hidden relative">
@@ -221,12 +242,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({
            
            {/* Camera Icon Badge - Always Visible */}
            <div className="absolute bottom-0 right-0 bg-white dark:bg-gray-800 p-1.5 rounded-full shadow-md border border-gray-200 dark:border-gray-600 transform transition-transform hover:scale-110">
-               <CameraIcon className="w-4 h-4 text-blue-500" />
+               <CameraIcon className="w-3 h-3 text-blue-500" />
            </div>
         </div>
 
         {/* Name Section */}
-        <div className="flex items-center justify-center mb-1">
+        <div className="flex items-center justify-center mb-0.5">
             {isEditingName ? (
                 <div className="flex items-center">
                     <input 
@@ -241,34 +262,30 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                 </div>
             ) : (
                 <div className="flex items-center group cursor-pointer" onClick={handleEditClick}>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mr-2">
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white mr-2">
                         {userName}
                     </h1>
-                    <PencilIcon className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    <PencilIcon className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
                 </div>
             )}
         </div>
-        
-        <p className="text-sm font-medium text-blue-500 dark:text-blue-400 uppercase tracking-wider bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full mt-1">
-          Language Explorer
-        </p>
 
         {/* Login/Logout Button */}
-        <div className="mt-4">
+        <div className="mt-1">
             {!isLoggedIn ? (
                 <button 
                     onClick={onLogin}
-                    className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-full font-semibold shadow-md transition-transform transform active:scale-95"
+                    className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded-full font-semibold shadow-md transition-transform transform active:scale-95 text-xs"
                 >
-                    <LoginIcon className="w-4 h-4" />
+                    <LoginIcon className="w-3 h-3" />
                     <span>Log In</span>
                 </button>
             ) : (
                 <button 
                     onClick={handleLogoutClick}
-                    className="flex items-center space-x-2 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 px-4 py-2 rounded-full font-semibold shadow-sm transition-transform transform active:scale-95"
+                    className="flex items-center space-x-2 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 px-3 py-1 rounded-full font-semibold shadow-sm transition-transform transform active:scale-95 text-xs"
                 >
-                    <LogoutIcon className="w-4 h-4" />
+                    <LogoutIcon className="w-3 h-3" />
                     <span>Log Out</span>
                 </button>
             )}
@@ -276,82 +293,138 @@ const ProfileView: React.FC<ProfileViewProps> = ({
       </div>
 
       {/* Key Metrics / Achievements (Three Card Layout) */}
-      <div className="grid grid-cols-3 gap-3 mb-8 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+      <div className="grid grid-cols-3 gap-2 mb-4 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
         {/* Level Card */}
         <button 
           onClick={() => setActiveAlert({ message: "Get 1000XP to Level Up", targetTab: 'quiz' })}
-          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
         >
-          <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
-            <TrophyIcon className="w-5 h-5 text-yellow-600" />
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 p-1.5 rounded-full mb-1">
+            <TrophyIcon className="w-4 h-4 text-yellow-600" />
           </div>
-          <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Level</span>
-          <span className="text-lg font-bold text-gray-800 dark:text-white">{getLevelLabel(userLevel)}</span>
+          <span className="text-[10px] text-gray-400 font-semibold uppercase mb-0.5">Level</span>
+          <span className="text-base font-bold text-gray-800 dark:text-white">{getLevelLabel(userLevel)}</span>
         </button>
 
-        {/* Coins Card (Matches Quiz Task Bar Coins) */}
+        {/* Coins Card */}
         <button 
           onClick={() => setActiveAlert({ message: "Mark the words ‘Learned’ to get points.", targetTab: 'home' })}
-          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
         >
-          <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 rounded-full mb-2">
-            <CoinIcon className="w-5 h-5 text-yellow-500" />
+          <div className="bg-yellow-100 dark:bg-yellow-900/30 p-1.5 rounded-full mb-1">
+            <CoinIcon className="w-4 h-4 text-yellow-500" />
           </div>
-          <span className="text-xs text-gray-400 font-semibold uppercase mb-1">Coins</span>
-          <span className="text-lg font-bold text-gray-800 dark:text-white">{userCoins.toLocaleString()}</span>
+          <span className="text-[10px] text-gray-400 font-semibold uppercase mb-0.5">Coins</span>
+          <span className="text-base font-bold text-gray-800 dark:text-white">{userCoins.toLocaleString()}</span>
         </button>
 
-        {/* XP Card (Matches Quiz Task Bar XP) */}
+        {/* XP Card */}
         <button 
           onClick={() => setActiveAlert({ message: "Complete the quizzes to Level Up!", targetTab: 'quiz' })}
-          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-3 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
+          className="w-full bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center transform transition-transform hover:scale-105 active:scale-95"
         >
-          <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mb-2">
-            <StarIcon className="w-5 h-5 text-blue-500" />
+          <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-full mb-1">
+            <StarIcon className="w-4 h-4 text-blue-500" />
           </div>
-          <span className="text-xs text-gray-400 font-semibold uppercase mb-1">XP</span>
-          <span className="text-lg font-bold text-gray-800 dark:text-white">{userPoints.toLocaleString()}</span>
+          <span className="text-[10px] text-gray-400 font-semibold uppercase mb-0.5">XP</span>
+          <span className="text-base font-bold text-gray-800 dark:text-white">{userPoints.toLocaleString()}</span>
         </button>
       </div>
 
-      {/* Daily Streak Section with 10 Round Indicators */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border border-gray-100 dark:border-gray-700 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">Daily Streak</h2>
-          <div className="flex items-center space-x-1 bg-orange-50 dark:bg-orange-900/20 px-3 py-1 rounded-lg border border-orange-100 dark:border-orange-800">
-             <FireIcon className="w-5 h-5 text-orange-500" />
-             <span className="font-bold text-orange-600 dark:text-orange-400">{userStreak} Days</span>
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-center mt-4 px-1">
-            {Array.from({ length: 10 }).map((_, index) => {
-                // Calculate cycle progress: 1-10
-                const cycleProgress = userStreak % 10;
-                // If userStreak is 10, 20, etc., cycleProgress is 0, but we want it to show full 10 dots.
-                const filledCount = (cycleProgress === 0 && userStreak > 0) ? 10 : cycleProgress;
-                
-                const isFilled = index < filledCount;
-                
-                return (
-                    <div key={index} className="flex flex-col items-center">
-                        <div 
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
-                                isFilled 
-                                ? 'bg-orange-500 border-orange-600 shadow-sm shadow-orange-200 dark:shadow-none scale-110' 
-                                : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                            }`}
-                        >
-                            {isFilled && <FireIcon className="w-3 h-3 text-white" />}
+      {/* Daily Streak Section - Redesigned Style */}
+      <div className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl p-0 shadow-lg border border-orange-100 dark:border-gray-700 mb-6 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+         {/* Top Banner / Hero */}
+         <div className="bg-gradient-to-r from-orange-500 to-red-600 p-4 sm:p-5 text-white flex items-center justify-between relative overflow-hidden">
+             {/* Background Pattern */}
+             <div className="absolute inset-0 opacity-10">
+                 <svg className="w-full h-full" viewBox="0 0 100 100" fill="none">
+                     <circle cx="20" cy="20" r="20" fill="currentColor"/>
+                     <circle cx="80" cy="80" r="30" fill="currentColor"/>
+                 </svg>
+             </div>
+             
+             <div className="relative z-10">
+                 <h2 className="text-lg sm:text-xl font-bold opacity-90">Daily Streak</h2>
+                 <div className="flex items-baseline space-x-2 mt-1">
+                     <span className="text-4xl font-black">{userStreak}</span>
+                     <span className="text-lg font-medium opacity-80">Days</span>
+                 </div>
+             </div>
+             
+             <div className="relative z-10 bg-white/20 p-3 rounded-full backdrop-blur-sm border border-white/30 shadow-inner">
+                 <FireIcon className="w-8 h-8 text-white animate-pulse" />
+             </div>
+         </div>
+
+         {/* Calendar Strip */}
+         <div className="p-4 sm:p-5 bg-white dark:bg-gray-800">
+            <div className="flex justify-between items-center px-1">
+                {Array.from({ length: 7 }).map((_, index) => { 
+                    const cycleProgress = userStreak % 7;
+                    const filledCount = (cycleProgress === 0 && userStreak > 0) ? 7 : cycleProgress;
+                    const isFilledVisual = index < filledCount;
+
+                    return (
+                         <div key={index} className="flex flex-col items-center gap-1">
+                            <div 
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-500 ${
+                                    isFilledVisual 
+                                    ? 'bg-orange-100 text-orange-600 border-2 border-orange-500 shadow-sm' 
+                                    : 'bg-gray-100 text-gray-400 border-2 border-transparent dark:bg-gray-700 dark:text-gray-500'
+                                }`}
+                            >
+                                {isFilledVisual ? <FireIcon className="w-4 h-4" /> : (index + 1)}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
-        </div>
-        
-        <p className="text-center text-xs text-gray-400 mt-3 font-medium">
-            Keep the flame alive! Practice daily to maintain your streak.
-        </p>
+                    );
+                })}
+            </div>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4 font-medium">
+                You're on fire! Practice daily to keep the flame alive.
+            </p>
+         </div>
+      </div>
+
+      {/* Daily Goal Calendar Widget */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700 mb-6 animate-fade-in-up" style={{ animationDelay: '250ms' }}>
+          <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white">Goal Calendar</h2>
+              <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">{monthNames[currentMonth]} {currentYear}</span>
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 text-center mb-2">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                  <div key={i} className="text-xs font-bold text-gray-400">{d}</div>
+              ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-1 justify-items-center">
+              {blanks.map((b) => <div key={`blank-${b}`} className="w-8 h-8"></div>)}
+              {days.map((d) => {
+                  const { classes, dateStr } = getDayClass(d);
+                  return (
+                      <div key={d} className={classes}>
+                          {d}
+                          {/* Checkmark for met goals */}
+                          {isGoalMet(dateStr) && (
+                              <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full border border-gray-100 dark:border-gray-700">
+                                  <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                              </div>
+                          )}
+                      </div>
+                  );
+              })}
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span>Goal Met</span>
+              </div>
+              <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-blue-100"></div>
+                  <span>Today</span>
+              </div>
+          </div>
       </div>
 
       {/* Engage & Share Section */}
@@ -370,41 +443,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({
             <span className="font-bold text-sm">Leaderboard</span>
           </button>
         </div>
-      </div>
-
-      {/* Listen to Podcast Section (Two Columns) */}
-      <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-         <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center">
-            Listen to Podcast
-            <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">New Episodes</span>
-         </h2>
-         <div className="grid grid-cols-2 gap-4">
-             {PODCAST_THUMBNAILS.map((item) => (
-                 <button
-                    key={item.id}
-                    onClick={() => handlePodcastClick(item.url)}
-                    className="relative w-full aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all group"
-                 >
-                     <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                     
-                     {/* Gradient Overlay */}
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                     
-                     {/* Play Button Icon Overlay */}
-                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="bg-white/90 text-red-600 rounded-full p-3 shadow-lg transform scale-75 group-hover:scale-100 transition-transform">
-                             <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        </div>
-                     </div>
-
-                     {/* Text */}
-                     <div className="absolute bottom-0 left-0 p-3 sm:p-4 text-left">
-                         <span className="text-[9px] sm:text-[10px] font-bold text-red-500 bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm mb-1 inline-block">WATCH</span>
-                         <h3 className="text-white font-bold text-sm sm:text-lg leading-tight drop-shadow-md line-clamp-2">{item.title}</h3>
-                     </div>
-                 </button>
-             ))}
-         </div>
       </div>
 
     </div>
