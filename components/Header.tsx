@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({
         {/* Right Section */}
         <div className="flex items-center space-x-2">
           {showAiBar && (
-            <form onSubmit={handleGenerate} className="hidden sm:flex w-64 lg:w-80 mr-2 relative items-center">
+            <form onSubmit={handleGenerate} className="hidden sm:flex w-64 md:w-80 lg:w-96 xl:w-[28rem] mr-2 relative items-center transition-all duration-300">
               <input
                 type="text"
                 placeholder="Topic (e.g. Space)..."
