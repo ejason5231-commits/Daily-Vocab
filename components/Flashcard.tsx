@@ -1,4 +1,3 @@
-q
 
 import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
@@ -84,7 +83,6 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
         } catch (e) {
           console.error('Failed to open settings:', e);
         }
-        alert('Microphone access is required. Please enable it in App Settings.');
         return;
       }
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
