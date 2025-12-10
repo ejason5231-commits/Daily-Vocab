@@ -83,8 +83,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="p-4 sm:p-6 pb-24">
       {/* Level Buttons Section */}
-      {/* mt-28 ensures it clears the header+AI bar on mobile. sm:mt-6 for desktop. */}
-      <div className="mt-28 sm:mt-6 mb-6 animate-fade-in-up">
+      {/* Adjusted margin top to be smaller (mt-12) to reduce whitespace while still clearing header */}
+      <div className="mt-12 sm:mt-6 mb-6 animate-fade-in-up">
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Select Level</h3>
             <DifficultyTabs 
