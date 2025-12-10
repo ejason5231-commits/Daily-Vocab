@@ -1,9 +1,10 @@
+q
 
 import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
 import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, MicrophoneIcon, StopIcon, PlayIcon } from './icons';
 import { playAudio } from '../services/audioService';
-import { requestMic, stopStream } from '../utils/requestMic';
+import microphoneService from '../services/microphoneService';
 
 interface FlashcardProps {
   wordData: VocabularyWord;
@@ -75,13 +76,18 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
     }
 
     try {
-      const stream = await requestMic();
-      if (!stream) {
-        // Permission denied
-        console.warn('Microphone permission denied by user');
-        alert('Microphone access was denied. Please enable microphone permission to record.');
+      const ok = await microphoneService.requestMicrophoneAccess();
+      if (!ok) {
+        // Open app settings for user to enable microphone permissions
+        try {
+          await microphoneService.openAppSettings();
+        } catch (e) {
+          console.error('Failed to open settings:', e);
+        }
+        alert('Microphone access is required. Please enable it in App Settings.');
         return;
       }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const options = supportedMimeType ? { mimeType: supportedMimeType } : {};
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
@@ -95,16 +101,13 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
         const audioBlob = new Blob(audioChunksRef.current, { type: supportedMimeType });
         const audioUrl = URL.createObjectURL(audioBlob);
         setUserAudioURL(audioUrl);
-        stopStream(stream); // Release microphone
+        stream.getTracks().forEach(track => track.stop()); // Release microphone
       };
 
       mediaRecorder.start();
       setIsRecording(true);
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      if (err instanceof DOMException) {
-        console.error('DOMException details:', err.name, err.code);
-      }
       alert("Microphone access is required for this feature. Please enable it in your browser settings.");
     }
   };
