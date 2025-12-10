@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -11,13 +11,83 @@ import ProfileView from './components/ProfileView'; // Added Import
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
-import LoginModal from './components/LoginModal'; 
+import LoginModal from './components/LoginModal';
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
 import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
 import { SparklesIcon } from './components/icons';
+import microphoneService, { hasMicrophonePermission, getIsMiui } from './services/microphoneService';
+import OpenSettingsModal from './components/OpenSettingsModal';
+import UpdateModal from './components/UpdateModal';
+import { checkForUpdate, openPlayStoreUpdate } from './services/updateService';
+// --- AdMob Setup ---
+import { AdMob, RewardInterstitialAdPluginEvents } from "@capacitor-community/admob";
+
+// PRODUCTION AD UNIT IDs (active)
+export const INTERSTITIAL_ID = "ca-app-pub-3055032812859066/5534475851"; // Production interstitial
+export const REWARDED_INTERSTITIAL_ID = "ca-app-pub-3055032812859066/1105110403"; // Production rewarded interstitial
+
+// GOOGLE TEST AD UNIT IDs (for local testing)
+// export const INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"; // Google test interstitial
+// export const REWARDED_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/5354046592"; // Google test rewarded ad
+
+// Store last time we showed interstitial (module-level number to avoid hooks at top-level)
+let lastInterstitialTime = 0;
+
+// 45 sec cooldown
+const canShowInterstitial = () => {
+  const now = Date.now();
+  return now - lastInterstitialTime >= 45000;
+};
+
+// --- Interstitial Ad ---
+export async function showInterstitial() {
+  if (!canShowInterstitial()) {
+    console.log("Interstitial cooldown active");
+    return;
+  }
+
+  try {
+    console.log("Preparing interstitial ad...");
+    await AdMob.prepareInterstitial({
+      adId: INTERSTITIAL_ID,
+      isTesting: false, // Production mode - request real ads
+    });
+
+    console.log("Showing interstitial ad...");
+    await AdMob.showInterstitial();
+    lastInterstitialTime = Date.now();
+    console.log("Interstitial ad shown successfully");
+
+  } catch (err) {
+    console.error("Interstitial error:", err);
+  }
+}
+
+// --- Rewarded Interstitial ---
+export async function showRewardInterstitial() {
+  try {
+    console.log("Preparing rewarded-interstitial ad...");
+    await AdMob.prepareRewardInterstitialAd({
+      adId: REWARDED_INTERSTITIAL_ID,
+      isTesting: false, // Production mode - request real ads
+    });
+
+    AdMob.addListener(RewardInterstitialAdPluginEvents.Rewarded, (reward) => {
+      console.log("User earned reward:", reward);
+    });
+
+    console.log("Showing rewarded-interstitial ad...");
+    await AdMob.showRewardInterstitialAd();
+    console.log("Rewarded-interstitial ad shown successfully");
+
+  } catch (err) {
+    console.error("Rewarded Interstitial error:", err);
+  }
+}
+
 
 interface QuizCompletionResult {
   correctlyAnsweredWords: string[];
@@ -34,7 +104,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'profile'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // Settings & User State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -44,7 +114,7 @@ const App: React.FC = () => {
     }
     return 'light';
   });
-  
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
   const [userName, setUserName] = useState(() => {
@@ -53,7 +123,7 @@ const App: React.FC = () => {
   const [profileImage, setProfileImage] = useState<string | null>(() => {
     return window.localStorage.getItem('profileImage');
   });
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Data State
   const [categories, setCategories] = useState<Category[]>(CATEGORIES);
@@ -66,45 +136,45 @@ const App: React.FC = () => {
     const stored = window.localStorage.getItem('masteredWords');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
-  
+
   // Transient State for AI Generated Words (Not persisted to app state)
   const [aiGeneratedWords, setAiGeneratedWords] = useState<VocabularyWord[]>([]);
-  
+
   // Category-specific unlocked levels
   const [unlockedLevels, setUnlockedLevels] = useState<Record<string, number>>(() => {
-      const stored = window.localStorage.getItem('unlockedLevels');
-      return stored ? JSON.parse(stored) : {};
+    const stored = window.localStorage.getItem('unlockedLevels');
+    return stored ? JSON.parse(stored) : {};
   });
 
   // Global Journey unlocked level
   const [globalUnlockedLevel, setGlobalUnlockedLevel] = useState<number>(() => {
-      const stored = window.localStorage.getItem('globalUnlockedLevel');
-      return stored ? parseInt(stored, 10) : 1;
+    const stored = window.localStorage.getItem('globalUnlockedLevel');
+    return stored ? parseInt(stored, 10) : 1;
   });
 
   // Gamification State
   const [userPoints, setUserPoints] = useState<number>(() => {
-      const stored = window.localStorage.getItem('userPoints');
-      return stored ? parseInt(stored, 10) : 0;
+    const stored = window.localStorage.getItem('userPoints');
+    return stored ? parseInt(stored, 10) : 0;
   });
-  
+
   const [userCoins, setUserCoins] = useState<number>(() => {
-      const stored = window.localStorage.getItem('userCoins');
-      return stored ? parseInt(stored, 10) : 0;
+    const stored = window.localStorage.getItem('userCoins');
+    return stored ? parseInt(stored, 10) : 0;
   });
 
   // Streak State
   const [userStreak, setUserStreak] = useState<number>(() => {
-      const stored = window.localStorage.getItem('userStreak');
-      return stored ? parseInt(stored, 10) : 0;
+    const stored = window.localStorage.getItem('userStreak');
+    return stored ? parseInt(stored, 10) : 0;
   });
   const [lastActiveDate, setLastActiveDate] = useState<string>(() => {
-      return window.localStorage.getItem('lastActiveDate') || '';
+    return window.localStorage.getItem('lastActiveDate') || '';
   });
 
   const [earnedBadges, setEarnedBadges] = useState<string[]>(() => {
-      const stored = window.localStorage.getItem('earnedBadges');
-      return stored ? JSON.parse(stored) : [];
+    const stored = window.localStorage.getItem('earnedBadges');
+    return stored ? JSON.parse(stored) : [];
   });
   const [dailyGoal, setDailyGoal] = useState<DailyGoal>(() => {
     const stored = window.localStorage.getItem('dailyGoal');
@@ -122,17 +192,23 @@ const App: React.FC = () => {
 
   // Notification Queues
   const [badgeNotification, setBadgeNotification] = useState<Badge | null>(null);
-  const [levelUpNotification, setLevelUpNotification] = useState<{level: number, categoryName: string} | null>(null);
+  const [levelUpNotification, setLevelUpNotification] = useState<{ level: number, categoryName: string } | null>(null);
+  const [isOpenSettingsModalOpen, setIsOpenSettingsModalOpen] = useState(false);
+  const [isMiuiDevice, setIsMiuiDevice] = useState(false);
 
   // AI Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
+  // Update Check State
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ isForceUpdate: boolean; latestVersion: string } | null>(null);
+
   // Quiz State for Category Drill-down
   const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
   const [quizStartLevel, setQuizStartLevel] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState<string>('');
-  
+
   // Global Journey Words (Flattened)
   const allJourneyWords = useMemo(() => {
     return (Object.values(wordCache) as VocabularyWord[][]).reduce((acc, val) => acc.concat(val), [] as VocabularyWord[]);
@@ -145,6 +221,23 @@ const App: React.FC = () => {
     document.documentElement.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Initialize AdMob on first mount
+  useEffect(() => {
+    const initAdmob = async () => {
+      try {
+        await AdMob.initialize({
+          requestTrackingAuthorization: true,
+          initializeForTesting: false, // Production mode - real ads
+        });
+        console.log('AdMob initialized successfully');
+      } catch (err) {
+        console.error('AdMob initialization error:', err);
+      }
+    };
+
+    initAdmob();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('userName', userName);
@@ -161,7 +254,7 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('learnedWords', JSON.stringify(Array.from(learnedWords)));
   }, [learnedWords]);
-  
+
   useEffect(() => {
     localStorage.setItem('masteredWords', JSON.stringify(Array.from(masteredWords)));
   }, [masteredWords]);
@@ -194,6 +287,34 @@ const App: React.FC = () => {
     localStorage.setItem('dailyProgress', JSON.stringify(dailyProgress));
   }, [dailyProgress]);
 
+  // Interstitial ad throttling: show on screen switches (including returning to home)
+  const prevViewRef = useRef(currentView);
+  const lastInterstitialShownRef = useRef<number>(0);
+  const nextInterstitialAllowedRef = useRef<number>(0);
+
+  useEffect(() => {
+    // only act when view actually changes
+    if (prevViewRef.current === currentView) return;
+
+    const now = Date.now();
+    if (now >= nextInterstitialAllowedRef.current) {
+      (async () => {
+        try {
+          await showInterstitial();
+        } catch (e) {
+          // ignore ad errors
+        }
+      })();
+
+      lastInterstitialShownRef.current = now;
+      // Random cooldown between 45s and 120s
+      const cooldown = 45000 + Math.floor(Math.random() * (120000 - 45000 + 1));
+      nextInterstitialAllowedRef.current = now + cooldown;
+    }
+
+    prevViewRef.current = currentView;
+  }, [currentView]);
+
   useEffect(() => {
     localStorage.setItem('userStreak', userStreak.toString());
   }, [userStreak]);
@@ -201,6 +322,49 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('lastActiveDate', lastActiveDate);
   }, [lastActiveDate]);
+
+  // Check microphone permission at startup and show modal to request if not granted
+  useEffect(() => {
+    (async () => {
+      try {
+        const granted = await hasMicrophonePermission();
+        setMicrophoneEnabled(granted);
+        
+        // Microphone permission check (user can toggle from sidebar)
+        if (!granted) {
+          console.log('Microphone permission not granted');
+        }
+      } catch (err) {
+        console.error('Error checking microphone permission:', err);
+      }
+      try {
+        const res = await getIsMiui?.();
+        if (res && res.isMiui) setIsMiuiDevice(true);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
+  // Check for app updates on startup
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        const result = checkForUpdate();
+        if (result.needsUpdate) {
+          setUpdateInfo({
+            isForceUpdate: result.isForceUpdate,
+            latestVersion: result.latestVersion,
+          });
+          setShowUpdateModal(true);
+        }
+      } catch (err) {
+        console.error('Error checking for updates:', err);
+      }
+    };
+
+    checkUpdate();
+  }, []);
 
   // --- Handlers ---
 
@@ -220,7 +384,7 @@ const App: React.FC = () => {
 
   const handleToggleLearned = (word: string) => {
     const isAlreadyLearned = learnedWords.has(word);
-    
+
     if (isAlreadyLearned) {
       setLearnedWords(prev => {
         const next = new Set(prev);
@@ -236,7 +400,18 @@ const App: React.FC = () => {
       // Side effects performed outside the state setter to ensure reliability
       updateDailyProgress('words');
       // REWARD: Learning words gives COINS
-      addCoins(POINTS.LEARN_WORD); 
+      addCoins(POINTS.LEARN_WORD);
+      // If the user crossed a 20-words milestone, show rewarded-interstitial
+      const newCount = learnedWords.size + 1;
+      if (newCount % 20 === 0) {
+        (async () => {
+          try {
+            await showRewardInterstitial();
+          } catch (e) {
+            // ignore
+          }
+        })();
+      }
     }
   };
 
@@ -252,7 +427,7 @@ const App: React.FC = () => {
     // If last activity was yesterday, increment streak.
     // Otherwise (last activity was before yesterday or never), reset to 1.
     if (lastActiveDate === yesterdayString) {
-        newStreak = userStreak + 1;
+      newStreak = userStreak + 1;
     }
 
     setUserStreak(newStreak);
@@ -281,16 +456,16 @@ const App: React.FC = () => {
 
   const addPoints = (points: number) => {
     setUserPoints(prev => {
-        const newPoints = prev + points;
-        checkBadges(newPoints, learnedCountMemo, masteredCountMemo);
-        return newPoints;
+      const newPoints = prev + points;
+      checkBadges(newPoints, learnedCountMemo, masteredCountMemo);
+      return newPoints;
     });
   };
 
   const addCoins = (amount: number) => {
     setUserCoins(prev => prev + amount);
   };
-  
+
   // Memoize counts to avoid recalculating in addPoints
   const learnedCountMemo = useMemo(() => learnedWords.size, [learnedWords]);
   const masteredCountMemo = useMemo(() => masteredWords.size, [masteredWords]);
@@ -305,7 +480,7 @@ const App: React.FC = () => {
       if (badge.id === 'learner_2' && learnedCount >= 50) earned = true;
       if (badge.id === 'learner_3' && learnedCount >= 200) earned = true;
       if (badge.id === 'mastery_1' && masteredCount >= 25) earned = true;
-      
+
       if (earned) {
         newBadges.push(badge.id);
         setBadgeNotification(badge);
@@ -331,31 +506,31 @@ const App: React.FC = () => {
   };
 
   const handleUnlockLevel = (categoryName: string, level: number) => {
-      setUnlockedLevels(prev => {
-          const current = prev[categoryName] || 1;
-          if (level > current) {
-              setLevelUpNotification({ level, categoryName });
-              return { ...prev, [categoryName]: level };
-          }
-          return prev;
-      });
+    setUnlockedLevels(prev => {
+      const current = prev[categoryName] || 1;
+      if (level > current) {
+        setLevelUpNotification({ level, categoryName });
+        return { ...prev, [categoryName]: level };
+      }
+      return prev;
+    });
   };
 
   const handleGlobalLevelUnlock = (categoryName: string, level: number) => {
-      if (level > globalUnlockedLevel) {
-          setLevelUpNotification({ level, categoryName: "Vocab Journey" });
-          setGlobalUnlockedLevel(level);
-      }
+    if (level > globalUnlockedLevel) {
+      setLevelUpNotification({ level, categoryName: "Vocab Journey" });
+      setGlobalUnlockedLevel(level);
+    }
   };
 
   const handleCorrectAnswer = () => {
     // REWARD: Quizzes give XP for every correct answer
-    addPoints(1); 
+    addPoints(1);
   };
 
   const handleQuizComplete = (result: QuizCompletionResult) => {
     updateDailyProgress('quizzes');
-    
+
     setMasteredWords(prev => {
       const next = new Set(prev);
       result.correctlyAnsweredWords.forEach(word => next.add(word));
@@ -366,7 +541,7 @@ const App: React.FC = () => {
   // New function to handle intermediate saves
   const handleSaveProgress = (answeredWords: string[]) => {
     if (answeredWords.length === 0) return;
-    
+
     setMasteredWords(prev => {
       const next = new Set(prev);
       answeredWords.forEach(word => next.add(word));
@@ -375,6 +550,14 @@ const App: React.FC = () => {
   };
 
   const handleLevelUpDismiss = () => {
+    setLevelUpNotification(null);
+  };
+
+  const handleStartNextLevel = (level: number) => {
+    // Directly start the next level without ads
+    setQuizStartLevel(level);
+    setCurrentView('quiz');
+    setActiveTab('quiz');
     setLevelUpNotification(null);
   };
 
@@ -394,22 +577,30 @@ const App: React.FC = () => {
 
       // 2. If new, generate words
       const newWords = await getVocabularyForCategory(topic);
-      
+
       // 3. Set transient state (DO NOT update persistent app state like wordCache or categories)
       setAiGeneratedWords(newWords);
 
       // Create a temporary category object for view
       const tempCategory: Category = {
-          name: topic,
-          emoji: '✨',
-          color: 'bg-teal-500',
-          textColor: 'text-white'
+        name: topic,
+        emoji: '✨',
+        color: 'bg-teal-500',
+        textColor: 'text-white'
       };
-      
+
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
       // REMOVED: addPoints(POINTS.GENERATE_CATEGORY);
+      // Show a rewarded-interstitial ad after AI generation (non-blocking)
+      (async () => {
+        try {
+          await showRewardInterstitial();
+        } catch (e) {
+          // ignore
+        }
+      })();
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -419,40 +610,40 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-      setIsQuizActive(false); // Reset quiz active state
-      setAiGeneratedWords([]); // Clear transient AI words on back navigation
-      
-      if (currentView === 'quiz') {
-          // Return to category view
-          if (selectedCategory) {
-            setCurrentView('category');
-          } else {
-            setCurrentView('dashboard');
-          }
-      } else if (currentView === 'category') {
-          setCurrentView('dashboard');
-      } else if (currentView === 'leaderboard') {
-          setCurrentView('dashboard');
-      } else if (currentView === 'ai_create') {
-          setCurrentView('dashboard'); // Handle back from AI create if accessible
+    setIsQuizActive(false); // Reset quiz active state
+    setAiGeneratedWords([]); // Clear transient AI words on back navigation
+
+    if (currentView === 'quiz') {
+      // Return to category view
+      if (selectedCategory) {
+        setCurrentView('category');
+      } else {
+        setCurrentView('dashboard');
       }
+    } else if (currentView === 'category') {
+      setCurrentView('dashboard');
+    } else if (currentView === 'leaderboard') {
+      setCurrentView('dashboard');
+    } else if (currentView === 'ai_create') {
+      setCurrentView('dashboard'); // Handle back from AI create if accessible
+    }
   };
 
   const handleTabChange = (tab: 'home' | 'quiz' | 'profile') => {
-      setActiveTab(tab);
-      setIsQuizActive(false); // Reset quiz active state
+    setActiveTab(tab);
+    setIsQuizActive(false); // Reset quiz active state
 
-      if (tab === 'home') {
-          setCurrentView('dashboard');
-          setSelectedCategory(null);
-          setAiGeneratedWords([]); // Clear AI context when switching tabs
-      } else if (tab === 'quiz') {
-          setCurrentView('quiz_journey');
-          setSelectedCategory(null);
-      } else if (tab === 'profile') {
-          setCurrentView('profile');
-          setSelectedCategory(null);
-      }
+    if (tab === 'home') {
+      setCurrentView('dashboard');
+      setSelectedCategory(null);
+      setAiGeneratedWords([]); // Clear AI context when switching tabs
+    } else if (tab === 'quiz') {
+      setCurrentView('quiz_journey');
+      setSelectedCategory(null);
+    } else if (tab === 'profile') {
+      setCurrentView('profile');
+      setSelectedCategory(null);
+    }
   };
 
   const { handleTouchStart, handleTouchMove, handleTouchEnd, swipeStyles } = useSwipeBack({
@@ -465,65 +656,93 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-blue-50 dark:bg-gray-900 transition-colors duration-300 font-sans overflow-x-hidden">
-      
+
+      {/* Update Modal - Force or Optional Update */}
+      {updateInfo && (
+        <UpdateModal
+          isOpen={showUpdateModal}
+          isForceUpdate={updateInfo.isForceUpdate}
+          latestVersion={updateInfo.latestVersion}
+          currentVersion="0.0.1"
+          onUpdate={async () => {
+            try {
+              await openPlayStoreUpdate();
+            } catch (err) {
+              console.error('Failed to open Play Store:', err);
+            }
+          }}
+          onSkip={() => setShowUpdateModal(false)}
+        />
+      )}
+
       {/* AI Loading Overlay - Rectangular and Compact */}
       {isGenerating && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
           <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-2xl flex flex-row items-center gap-4 border border-gray-100 dark:border-gray-700 transform transition-all scale-100">
             <div className="relative flex-shrink-0">
-                <div className="absolute inset-0 bg-teal-400 blur-xl opacity-20 rounded-full animate-pulse"></div>
-                <SparklesIcon className="w-8 h-8 text-teal-500 animate-spin-slow relative z-10" />
+              <div className="absolute inset-0 bg-teal-400 blur-xl opacity-20 rounded-full animate-pulse"></div>
+              <SparklesIcon className="w-8 h-8 text-teal-500 animate-spin-slow relative z-10" />
             </div>
             <div className="flex flex-col justify-center">
-                <h3 className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500 leading-none mb-1">
-                    Generating...
-                </h3>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-tight">
-                  Crafting your lesson...
-                </p>
+              <h3 className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500 leading-none mb-1">
+                Generating...
+              </h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-tight">
+                Crafting your lesson...
+              </p>
             </div>
           </div>
         </div>
       )}
 
       {/* Login Modal */}
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
-        onLogin={handleLogin} 
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLogin={handleLogin}
       />
 
       {/* Sidebar - Fixed Overlay */}
-      <Sidebar 
-        isOpen={isSidebarOpen} 
+      <Sidebar
+        isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         theme={theme}
         onThemeToggle={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
         notificationsEnabled={notificationsEnabled}
         onNotificationsToggle={() => setNotificationsEnabled(!notificationsEnabled)}
         microphoneEnabled={microphoneEnabled}
-        onMicrophoneToggle={() => {
-            if (!microphoneEnabled) {
-                navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-                    setMicrophoneEnabled(true);
-                }).catch(() => {
-                    alert("Could not access microphone.");
-                });
-            } else {
+        onMicrophoneToggle={async () => {
+          if (!microphoneEnabled) {
+            try {
+              const ok = await microphoneService.requestMicrophoneAccess();
+              if (ok) {
+                setMicrophoneEnabled(true);
+              } else {
+                // Permission denied. Do not open system settings; inform user in-app.
+                console.warn('Microphone permission denied by user');
                 setMicrophoneEnabled(false);
+                // Optionally show a small in-app notice here
+              }
+            } catch (e) {
+              console.error('Error requesting microphone:', e);
+              setMicrophoneEnabled(false);
             }
+          } else {
+            // Turn microphone off within the app (stop using it) without navigating to system settings
+            setMicrophoneEnabled(false);
+          }
         }}
         dailyGoal={dailyGoal}
         onGoalChange={setDailyGoal}
         onShowDashboard={() => {
-            setCurrentView('dashboard');
-            setActiveTab('home');
-            setIsSidebarOpen(false);
+          setCurrentView('dashboard');
+          setActiveTab('home');
+          setIsSidebarOpen(false);
         }}
         onShowLeaderboard={() => {
-            setCurrentView('leaderboard');
-            setActiveTab('home');
-            setIsSidebarOpen(false);
+          setCurrentView('leaderboard');
+          setActiveTab('home');
+          setIsSidebarOpen(false);
         }}
         userQuizScore={userPoints}
         isLoggedIn={isLoggedIn}
@@ -532,9 +751,31 @@ const App: React.FC = () => {
         onLogoutClick={handleLogout}
       />
 
+      <OpenSettingsModal
+        isOpen={isOpenSettingsModalOpen}
+        isMiui={isMiuiDevice}
+        onOpenSettings={async () => {
+          try {
+            await microphoneService.openAppSettings();
+          } catch (e) {
+            console.error('Failed to open settings', e);
+            try { await microphoneService.openAppSettings(); } catch (nested) { console.error('Failed fallback open', nested); }
+          }
+          // Keep the modal open until the user clicks 'Cancel' or exits settings
+        }}
+        onCancel={() => setIsOpenSettingsModalOpen(false)}
+        onCheckPermission={async () => {
+          try {
+            const granted = await hasMicrophonePermission();
+            setMicrophoneEnabled(!!granted);
+            if (granted) setIsOpenSettingsModalOpen(false);
+          } catch (e) { console.error('Error checking permission:', e); }
+        }}
+      />
+
       {/* Global Header - Fixed Top (Outside swipe container) */}
       {showHeader && (
-        <Header 
+        <Header
           showBackButton={currentView !== 'dashboard' && currentView !== 'ai_create' && currentView !== 'profile'}
           onBack={handleBack}
           onMenu={() => setIsLoginModalOpen(true)} // Profile icon opens Login Modal directly
@@ -548,149 +789,150 @@ const App: React.FC = () => {
       )}
 
       {/* Main Content Wrapper - Handles Swipe Transform */}
-      <div 
+      <div
         className="w-full min-h-screen flex flex-col"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={swipeStyles}
       >
-        <main 
-            className={`container mx-auto max-w-5xl flex-grow ${activeTab === 'quiz' || isQuizActive ? '' : 'pb-24'}`}
-            style={{
+        <main
+          className={`container mx-auto max-w-5xl flex-grow ${activeTab === 'quiz' || isQuizActive ? '' : 'pb-24'}`}
+          style={{
             paddingTop: showHeader ? 'calc(4rem + env(safe-area-inset-top))' : undefined
-            }}
+          }}
         >
-            {currentView === 'dashboard' && (
-            <Dashboard 
-                categories={categories}
-                onSelectCategory={handleSelectCategory}
-                wordCache={wordCache}
-                learnedWords={learnedWords}
-                masteredWords={masteredWords}
-                totalWords={(Object.values(wordCache) as VocabularyWord[][]).reduce((acc, words) => acc + words.length, 0)}
-                dailyGoal={dailyGoal}
-                dailyProgress={dailyProgress}
-                userName={userName}
-                userPoints={userPoints}
+          {currentView === 'dashboard' && (
+            <Dashboard
+              categories={categories}
+              onSelectCategory={handleSelectCategory}
+              wordCache={wordCache}
+              learnedWords={learnedWords}
+              masteredWords={masteredWords}
+              totalWords={(Object.values(wordCache) as VocabularyWord[][]).reduce((acc, words) => acc + words.length, 0)}
+              dailyGoal={dailyGoal}
+              dailyProgress={dailyProgress}
+              userName={userName}
+              userPoints={userPoints}
             />
-            )}
+          )}
 
-            {currentView === 'category' && selectedCategory && (
-            <CategoryView 
-                category={selectedCategory}
-                // Use cached words if exists (built-in), otherwise use transient AI words
-                words={wordCache[selectedCategory.name] || aiGeneratedWords}
-                learnedWords={learnedWords}
-                onToggleLearned={handleToggleLearned}
-                onStartQuiz={(words) => handleStartQuiz(words, selectedCategory.name, unlockedLevels[selectedCategory.name] || 1)}
-                microphoneEnabled={microphoneEnabled}
+          {currentView === 'category' && selectedCategory && (
+            <CategoryView
+              category={selectedCategory}
+              // Use cached words if exists (built-in), otherwise use transient AI words
+              words={wordCache[selectedCategory.name] || aiGeneratedWords}
+              learnedWords={learnedWords}
+              onToggleLearned={handleToggleLearned}
+              onStartQuiz={(words) => handleStartQuiz(words, selectedCategory.name, unlockedLevels[selectedCategory.name] || 1)}
+              microphoneEnabled={microphoneEnabled}
             />
-            )}
+          )}
 
-            {currentView === 'quiz' && (
-            <QuizView 
-                words={quizWords} 
-                onQuizComplete={handleQuizComplete} 
-                onQuizExit={handleBack}
-                title={quizTitle}
-                categoryName={selectedCategory?.name || 'Quiz'}
-                unlockedLevel={selectedCategory ? (unlockedLevels[selectedCategory.name] || 1) : 1}
-                onUnlockLevel={handleUnlockLevel}
-                startAtLevel={quizStartLevel}
-                onQuizStatusChange={setIsQuizActive}
-                userPoints={userPoints}
-                userCoins={userCoins}
-                onCorrectAnswer={handleCorrectAnswer}
-                masteredWords={masteredWords}
-                onSaveProgress={handleSaveProgress}
-            />
-            )}
-
-            {currentView === 'quiz_journey' && (
+          {currentView === 'quiz' && (
             <QuizView
-                words={allJourneyWords}
-                onQuizComplete={handleQuizComplete}
-                onQuizExit={() => {}} // No-op, sidebar only opens via menu button
-                title="Vocab Journey"
-                categoryName="Vocab Journey"
-                unlockedLevel={globalUnlockedLevel}
-                onUnlockLevel={handleGlobalLevelUnlock}
-                onQuizStatusChange={setIsQuizActive}
-                userPoints={userPoints}
-                userCoins={userCoins}
-                onCorrectAnswer={handleCorrectAnswer}
-                masteredWords={masteredWords}
-                onSaveProgress={handleSaveProgress}
+              words={quizWords}
+              onQuizComplete={handleQuizComplete}
+              onQuizExit={handleBack}
+              title={quizTitle}
+              categoryName={selectedCategory?.name || 'Quiz'}
+              unlockedLevel={selectedCategory ? (unlockedLevels[selectedCategory.name] || 1) : 1}
+              onUnlockLevel={handleUnlockLevel}
+              startAtLevel={quizStartLevel}
+              onQuizStatusChange={setIsQuizActive}
+              userPoints={userPoints}
+              userCoins={userCoins}
+              onCorrectAnswer={handleCorrectAnswer}
+              masteredWords={masteredWords}
+              onSaveProgress={handleSaveProgress}
             />
-            )}
+          )}
 
-            {currentView === 'ai_create' && (
-                <AiCreateView 
-                    onGenerateCategory={handleAiGenerate}
-                    isGenerating={isGenerating}
-                    generationError={generationError}
-                />
-            )}
+          {currentView === 'quiz_journey' && (
+            <QuizView
+              words={allJourneyWords}
+              onQuizComplete={handleQuizComplete}
+              onQuizExit={() => { }} // No-op, sidebar only opens via menu button
+              title="Vocab Journey"
+              categoryName="Vocab Journey"
+              unlockedLevel={globalUnlockedLevel}
+              onUnlockLevel={handleGlobalLevelUnlock}
+              onQuizStatusChange={setIsQuizActive}
+              userPoints={userPoints}
+              userCoins={userCoins}
+              onCorrectAnswer={handleCorrectAnswer}
+              masteredWords={masteredWords}
+              onSaveProgress={handleSaveProgress}
+            />
+          )}
 
-            {currentView === 'leaderboard' && (
+          {currentView === 'ai_create' && (
+            <AiCreateView
+              onGenerateCategory={handleAiGenerate}
+              isGenerating={isGenerating}
+              generationError={generationError}
+            />
+          )}
+
+          {currentView === 'leaderboard' && (
             <LeaderboardView userName={userName} userPoints={userPoints} />
-            )}
+          )}
 
-            {currentView === 'profile' && (
-              <ProfileView 
-                userName={userName} 
-                userLevel={Math.floor(userPoints / 500) + 1} // Example level calc
-                userPoints={userPoints}
-                userCoins={userCoins}
-                userStreak={userStreak}
-                profileImage={profileImage}
-                onUpdateName={setUserName}
-                onUpdateProfileImage={setProfileImage}
-                onOpenSettings={() => setIsSidebarOpen(true)}
-                onShowLeaderboard={() => {
-                   setCurrentView('leaderboard');
-                   setActiveTab('home'); // Switch back to home context for leaderboard
-                }}
-                isLoggedIn={isLoggedIn}
-                onLogin={() => setIsLoginModalOpen(true)}
-                onLogout={handleLogout}
-                onNavigate={handleTabChange}
-              />
-            )}
+          {currentView === 'profile' && (
+            <ProfileView
+              userName={userName}
+              userLevel={Math.floor(userPoints / 500) + 1} // Example level calc
+              userPoints={userPoints}
+              userCoins={userCoins}
+              userStreak={userStreak}
+              profileImage={profileImage}
+              onUpdateName={setUserName}
+              onUpdateProfileImage={setProfileImage}
+              onOpenSettings={() => setIsSidebarOpen(true)}
+              onShowLeaderboard={() => {
+                setCurrentView('leaderboard');
+                setActiveTab('home'); // Switch back to home context for leaderboard
+              }}
+              isLoggedIn={isLoggedIn}
+              onLogin={() => setIsLoginModalOpen(true)}
+              onLogout={handleLogout}
+              onNavigate={handleTabChange}
+            />
+          )}
         </main>
       </div>
 
       {/* AI FAB - Bottom Right (Visible on Dashboard) positioned above BottomNavigation */}
       {currentView === 'dashboard' && (
         <button
-            onClick={() => setCurrentView('ai_create')}
-            className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 bg-gradient-to-r from-teal-400 to-teal-600 text-white w-16 h-16 rounded-full shadow-lg shadow-teal-500/40 hover:scale-110 active:scale-95 transition-all duration-300 flex flex-col items-center justify-center animate-bounce-slow"
-            aria-label="Create AI Topic"
+          onClick={() => setCurrentView('ai_create')}
+          className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-50 bg-gradient-to-r from-teal-400 to-teal-600 text-white w-16 h-16 rounded-full shadow-lg shadow-teal-500/40 hover:scale-110 active:scale-95 transition-all duration-300 flex flex-col items-center justify-center animate-bounce-slow"
+          aria-label="Create AI Topic"
         >
-            <SparklesIcon className="w-6 h-6 mb-0.5" />
-            <span className="text-[10px] font-black leading-none">AI</span>
+          <SparklesIcon className="w-6 h-6 mb-0.5" />
+          <span className="text-[10px] font-black leading-none">AI</span>
         </button>
       )}
 
       {/* Bottom Navigation - Fixed Bottom (Outside transformed container to prevent moving) */}
       {!isQuizActive && (
-        <BottomNavigation 
-          currentTab={activeTab} 
-          onTabChange={handleTabChange} 
+        <BottomNavigation
+          currentTab={activeTab}
+          onTabChange={handleTabChange}
           onOpenSettings={() => setIsSidebarOpen(true)}
         />
       )}
 
       {/* Notifications - Fixed Overlays */}
-      <BadgeNotification 
-        badge={badgeNotification} 
-        onDismiss={() => setBadgeNotification(null)} 
+      <BadgeNotification
+        badge={badgeNotification}
+        onDismiss={() => setBadgeNotification(null)}
       />
 
-      <LevelUpNotification 
+      <LevelUpNotification
         notification={levelUpNotification}
         onDismiss={handleLevelUpDismiss}
+        onStartNextLevel={handleStartNextLevel}
       />
     </div>
   );

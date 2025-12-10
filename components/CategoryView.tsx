@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Category, VocabularyWord } from '../types';
 import Flashcard from './Flashcard';
 import QuizProgress from './QuizProgress';
+import NativeAdCard from './NativeAdCard';
 
 interface CategoryViewProps {
   category: Category;
@@ -46,15 +47,25 @@ const CategoryView: React.FC<CategoryViewProps> = ({ category, words, learnedWor
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {words.map((word, index) => {
               const delay = Math.min(index * 50, 500); // Cap delay at 500ms for large lists
+              // Insert an Ad card every 6th card (index 5, 11, etc.)
+              const showAd = (index + 1) % 6 === 0;
+
               return (
-                <div key={word.word} className="stagger-appear h-full" style={{ animationDelay: `${delay}ms` }}>
-                  <Flashcard 
-                    wordData={word} 
-                    isLearned={learnedWords.has(word.word)}
-                    onToggleLearned={onToggleLearned}
-                    microphoneEnabled={microphoneEnabled}
-                  />
-                </div>
+                <React.Fragment key={word.word}>
+                  <div className="stagger-appear h-full" style={{ animationDelay: `${delay}ms` }}>
+                    <Flashcard 
+                      wordData={word} 
+                      isLearned={learnedWords.has(word.word)}
+                      onToggleLearned={onToggleLearned}
+                      microphoneEnabled={microphoneEnabled}
+                    />
+                  </div>
+                  {showAd && (
+                     <div className="stagger-appear h-full" style={{ animationDelay: `${delay + 25}ms` }}>
+                       <NativeAdCard />
+                     </div>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>

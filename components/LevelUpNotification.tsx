@@ -5,6 +5,7 @@ import { TrophyIcon } from './icons';
 interface LevelUpNotificationProps {
   notification: { level: number; categoryName: string } | null;
   onDismiss: () => void;
+  onStartNextLevel?: (level: number) => void;
 }
 
 const playLevelUpSound = () => {
@@ -33,7 +34,7 @@ const playLevelUpSound = () => {
       gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
       startTime += 0.1;
     });
-    
+
     oscillator.start(now);
     oscillator.stop(startTime);
   } catch (e) {
@@ -41,7 +42,7 @@ const playLevelUpSound = () => {
   }
 };
 
-const LevelUpNotification: React.FC<LevelUpNotificationProps> = ({ notification, onDismiss }) => {
+const LevelUpNotification: React.FC<LevelUpNotificationProps> = ({ notification, onDismiss, onStartNextLevel }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -77,6 +78,11 @@ const LevelUpNotification: React.FC<LevelUpNotificationProps> = ({ notification,
           <div>
             <p className="font-bold text-primary-500 text-sm">LEVEL UNLOCKED!</p>
             <p className="font-semibold text-gray-800 dark:text-white">Congratulations! You've unlocked Level {notification.level}.</p>
+            {onStartNextLevel && (
+              <div className="mt-2">
+                <button onClick={() => onStartNextLevel(notification.level)} className="px-3 py-2 bg-gradient-to-r from-teal-400 to-teal-600 text-white rounded-lg font-bold">Start Level {notification.level}</button>
+              </div>
+            )}
           </div>
           <button onClick={onDismiss} className="p-1 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
             &times;
