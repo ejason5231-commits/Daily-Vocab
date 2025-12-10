@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { 
   StarIcon, CoinIcon, FireIcon, 
@@ -8,15 +9,16 @@ import {
 const PODCAST_THUMBNAILS = [
     { 
         id: 1, 
-        title: "Daily Conversations", 
-        image: "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?auto=format&fit=crop&w=500&q=60", // People talking
-        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+        title: "Meet Someone & Talk About Weather", 
+        // YouTube Thumbnail URL format: https://img.youtube.com/vi/[VIDEO_ID]/hqdefault.jpg
+        image: "https://img.youtube.com/vi/pwAo98xsOv8/hqdefault.jpg", 
+        url: "https://youtu.be/pwAo98xsOv8"
     },
     { 
         id: 2, 
-        title: "Master Vocabulary", 
-        image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=60", // Books/Learning
-        url: "https://youtube.com/@learnengwitheric?si=HebmKBv0XVOT6j6I"
+        title: "Asking for Help", 
+        image: "https://img.youtube.com/vi/1dj3QI1Z5kI/hqdefault.jpg", 
+        url: "https://youtu.be/1dj3QI1Z5kI"
     },
     { 
         id: 3, 
@@ -370,18 +372,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Listen to Podcast Section (Scrollable Photos) */}
+      {/* Listen to Podcast Section (Two Columns) */}
       <div className="mb-8 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
          <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center">
             Listen to Podcast
             <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">New Episodes</span>
          </h2>
-         <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar touch-pan-x">
+         <div className="grid grid-cols-2 gap-4">
              {PODCAST_THUMBNAILS.map((item) => (
                  <button
                     key={item.id}
                     onClick={() => handlePodcastClick(item.url)}
-                    className="flex-shrink-0 w-64 h-40 relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all group"
+                    className="relative w-full aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all group"
                  >
                      <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                      
@@ -396,9 +398,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({
                      </div>
 
                      {/* Text */}
-                     <div className="absolute bottom-0 left-0 p-4">
-                         <span className="text-[10px] font-bold text-red-500 bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm mb-1 inline-block">WATCH NOW</span>
-                         <h3 className="text-white font-bold text-lg leading-tight drop-shadow-md">{item.title}</h3>
+                     <div className="absolute bottom-0 left-0 p-3 sm:p-4 text-left">
+                         <span className="text-[9px] sm:text-[10px] font-bold text-red-500 bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm mb-1 inline-block">WATCH</span>
+                         <h3 className="text-white font-bold text-sm sm:text-lg leading-tight drop-shadow-md line-clamp-2">{item.title}</h3>
                      </div>
                  </button>
              ))}
