@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AdMob, RewardInterstitialAdPluginEvents } from '@capacitor-community/admob';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
+import TipsModal from './components/TipsModal';
 import Dashboard from './components/Dashboard';
 import CategoryView from './components/CategoryView';
 import QuizView from './components/QuizView';
@@ -265,6 +266,9 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
+  // Tips modal shown on first run
+  const [isTipsOpen, setIsTipsOpen] = useState(false);
+
   const [quizWords, setQuizWords] = useState<VocabularyWord[]>([]);
   const [quizStartLevel, setQuizStartLevel] = useState<number | null>(null);
   const [quizTitle, setQuizTitle] = useState<string>('');
@@ -299,6 +303,20 @@ const App: React.FC = () => {
     return () => {
       rewardListener.remove();
     };
+  }, []);
+
+  // Show Tips modal on first run (unless user has dismissed it before)
+  useEffect(() => {
+    try {
+      const shown = typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem('tipsShown') : null;
+      if (!shown) {
+        setIsTipsOpen(true);
+      }
+    } catch (e) {
+      console.error('Failed to read tipsShown flag:', e);
+      // Fallback: show tips
+      setIsTipsOpen(true);
+    }
   }, []);
 
   // Check for app updates and setup notifications on startup
@@ -786,6 +804,24 @@ const App: React.FC = () => {
           onSkip={updateInfo.isForceUpdate ? undefined : handleSkipUpdate}
         />
       )}
+
+      <TipsModal
+        isOpen={isTipsOpen}
+        onClose={() => {
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('tipsShown', '1');
+            }
+          } catch (e) {
+            console.error('Failed to set tipsShown flag:', e);
+          }
+          setIsTipsOpen(false);
+        }}
+        onNavigate={(tab) => {
+          // Use existing handler to change tabs/views
+          handleTabChange(tab);
+        }}
+      />
 
       <Sidebar 
         isOpen={isSidebarOpen} 
