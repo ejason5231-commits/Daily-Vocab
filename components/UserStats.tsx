@@ -8,15 +8,23 @@ interface UserStatsProps {
   userPoints: number;
   goal: DailyGoal;
   progress: DailyProgress;
+  onGoalComplete?: () => void;
 }
 
-const UserStats: React.FC<UserStatsProps> = ({ userName, userPoints, goal, progress }) => {
+const UserStats: React.FC<UserStatsProps> = ({ userName, userPoints, goal, progress, onGoalComplete }) => {
   const isGoalCompleted = goal.type === 'words' 
     ? progress.wordsLearnedCount >= goal.value 
     : progress.quizzesCompletedCount >= goal.value;
   
   const progressValue = goal.type === 'words' ? progress.wordsLearnedCount : progress.quizzesCompletedCount;
   const percentage = goal.value > 0 ? (progressValue / goal.value) * 100 : 0;
+
+  // Trigger callback when goal is completed
+  React.useEffect(() => {
+    if (isGoalCompleted && onGoalComplete) {
+      onGoalComplete();
+    }
+  }, [progress.wordsLearnedCount, progress.quizzesCompletedCount, goal, onGoalComplete]);
   
   return (
     <div className="bg-white dark:bg-gray-800 py-3 px-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-row items-center justify-between gap-4">

@@ -316,6 +316,7 @@ const QuizView: React.FC<QuizViewProps> = ({
           // No mistakes: Level Complete (or Round Complete)
           onUnlockLevel(categoryName, currentLevel + 1);
           // Show rewarded-interstitial ad (non-blocking)
+          // The reward interstitial will set pendingRewardInterstitial flag to prevent nav ads
           (async () => {
             try {
               await showRewardInterstitial();
@@ -348,6 +349,16 @@ const QuizView: React.FC<QuizViewProps> = ({
     setShowFeedback(false);
     setMascotMessage("You can do it!");
     setQuizState('in_progress');
+
+    // Show reward interstitial ad when pressing retry
+    // The reward interstitial will set pendingRewardInterstitial flag to prevent nav ads
+    (async () => {
+      try {
+        await showRewardInterstitial();
+      } catch (e) {
+        // ignore ad failures
+      }
+    })();
   };
 
   const handleManualSave = () => {

@@ -3,13 +3,20 @@ import React from 'react';
 import { DailyGoal, DailyProgress } from '../types';
 import { CheckCircleIconSolid, QuizIcon, SparklesIcon } from './icons';
 
-const DailyGoalTracker: React.FC<{ goal: DailyGoal; progress: DailyProgress }> = ({ goal, progress }) => {
+const DailyGoalTracker: React.FC<{ goal: DailyGoal; progress: DailyProgress; onGoalComplete?: () => void }> = ({ goal, progress, onGoalComplete }) => {
   const isGoalCompleted = () => {
     if (goal.type === 'words') {
       return progress.wordsLearnedCount >= goal.value;
     }
     return progress.quizzesCompletedCount >= goal.value;
   };
+
+  // Trigger callback when goal is completed
+  React.useEffect(() => {
+    if (isGoalCompleted() && onGoalComplete) {
+      onGoalComplete();
+    }
+  }, [progress.wordsLearnedCount, progress.quizzesCompletedCount, goal, onGoalComplete]);
 
   const progressValue = goal.type === 'words' ? progress.wordsLearnedCount : progress.quizzesCompletedCount;
   const percentage = goal.value > 0 ? (progressValue / goal.value) * 100 : 0;

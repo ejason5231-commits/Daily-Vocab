@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { AdMob, RewardInterstitialAdPluginEvents } from '@capacitor-community/admob';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -12,13 +13,16 @@ import PodcastView from './components/PodcastView'; // Added Import
 import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
-import LoginModal from './components/LoginModal'; 
+import LoginModal from './components/LoginModal';
+import UpdateModal from './components/UpdateModal';
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
 import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
 import { useSwipeBack } from './hooks/useSwipeBack';
 import { BADGES, POINTS } from './gamificationConstants';
 import { SparklesIcon } from './components/icons';
+import { checkForUpdate, openPlayStoreUpdate } from './services/updateService';
+import { setupAllNotifications } from './services/notificationService';
 
 interface QuizCompletionResult {
   correctlyAnsweredWords: string[];
@@ -28,14 +32,132 @@ interface QuizCompletionResult {
 
 const getTodayString = () => new Date().toISOString().split('T')[0];
 
+// Ad Unit IDs (Production IDs) - replace these with the exact IDs from your AdMob account if different
+const AD_UNIT_IDS = {
+  rewardInterstitial: 'ca-app-pub-3055032812859066/1105110403', // Production reward interstitial
+  interstitial: 'ca-app-pub-3055032812859066/5534475851',        // Production interstitial
+  nativeAd: 'ca-app-pub-3055032812859066/6800104806',            // Production native ad
+};
+
+// Last time an interstitial ad was shown (for cooldown)
+let lastInterstitialAdTime = Date.now(); // Initialize to current time to enforce cooldown from start
+const INTERSTITIAL_COOLDOWN_MS = 60000; // 60 seconds
+
+// When true, navigation-triggered interstitials should be skipped once.
+let suppressNextInterstitial = false;
+
+// When true, a reward interstitial is pending/shown, so skip navigation-triggered regular interstitials
+let pendingRewardInterstitial = false;
+
+// Initialize AdMob
+const initializeAdMob = async () => {
+  try {
+    // Initialize AdMob. For production do NOT enable initializeForTesting.
+    await AdMob.initialize({
+      requestTrackingAuthorization: true,
+      initializeForTesting: false,
+    });
+    console.log('AdMob initialized successfully');
+  } catch (error) {
+    console.error('AdMob initialization failed:', error);
+  }
+};
+
+// Show rewarded interstitial ad
+export const showRewardInterstitial = async () => {
+  try {
+    console.log('[AdMob] Loading reward interstitial ad...');
+    // Set pending flag to prevent regular interstitials from overlapping
+    pendingRewardInterstitial = true;
+    
+    // Use prepareRewardInterstitialAd and showRewardInterstitialAd (correct API per plugin docs)
+    await AdMob.prepareRewardInterstitialAd({
+      adId: AD_UNIT_IDS.rewardInterstitial,
+    });
+
+    const rewardItem = await AdMob.showRewardInterstitialAd();
+    console.log('[AdMob] Reward interstitial ad shown successfully', rewardItem);
+    // Treat reward interstitial as an interstitial for cooldown purposes
+    try {
+      lastInterstitialAdTime = Date.now();
+    } catch (e) {
+      // ignore
+    }
+  } catch (error) {
+    console.error('[AdMob] Failed to show reward interstitial ad:', error);
+  } finally {
+    // Clear pending flag after a short delay to allow the ad to finish
+    setTimeout(() => {
+      pendingRewardInterstitial = false;
+      console.log('[AdMob] Reward interstitial pending flag cleared');
+    }, 500);
+  }
+};
+
+// Show interstitial ad with cooldown
+export const showInterstitialAd = async () => {
+  try {
+    const now = Date.now();
+    const timeSinceLastAd = now - lastInterstitialAdTime;
+    
+    // Check if cooldown period has passed
+    if (timeSinceLastAd < INTERSTITIAL_COOLDOWN_MS) {
+      const remainingCooldown = Math.ceil((INTERSTITIAL_COOLDOWN_MS - timeSinceLastAd) / 1000);
+      console.log(`[AdMob] Interstitial on cooldown. ${remainingCooldown}s remaining.`);
+      return;
+    }
+
+    console.log(`[AdMob] Showing interstitial ad (${timeSinceLastAd}ms since last ad)`);
+    await AdMob.prepareInterstitial({
+      adId: AD_UNIT_IDS.interstitial,
+    });
+
+    await AdMob.showInterstitial();
+    lastInterstitialAdTime = now;
+    console.log('[AdMob] Interstitial ad shown successfully');
+  } catch (error) {
+    console.error('[AdMob] Failed to show interstitial ad:', error);
+  }
+};
+
+// Helper to suppress next navigation-triggered interstitial (used before showing reward interstitials)
+export const suppressNextNavigationInterstitial = () => {
+  suppressNextInterstitial = true;
+  console.log('[AdMob] Navigation interstitial suppressed for next reward ad');
+};
+
+// Show native ad (returns ad data for custom rendering)
+export const loadNativeAd = async () => {
+  try {
+    console.log('Loading native ad...');
+    // Note: Native ads require custom implementation in the UI component
+    // This loads the ad and the component should handle display
+    const res = await AdMob.loadNativeAd({
+      adId: AD_UNIT_IDS.nativeAd,
+    });
+    console.log('[AdMob] Native ad load response:', res);
+    console.log('Native ad loaded successfully');
+    // Return the full response so UI components can inspect/render ad assets
+    return res;
+  } catch (error) {
+    console.error('Failed to load native ad:', error);
+    return null;
+  }
+};
+
+// Banner ads are intentionally not used in this app.
+
 const App: React.FC = () => {
   // Navigation State
   const [currentView, setCurrentView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey' | 'profile' | 'podcast'>('dashboard');
+  const [previousView, setPreviousView] = useState<'dashboard' | 'category' | 'quiz' | 'ai_create' | 'leaderboard' | 'quiz_journey' | 'profile' | 'podcast'>('dashboard');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState<'home' | 'quiz' | 'podcast' | 'profile'>('home');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ isForceUpdate: boolean; latestVersion: string; currentVersion: string } | null>(null); 
 
   // Settings & User State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -159,6 +281,91 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Initialize AdMob on app startup
+  useEffect(() => {
+    initializeAdMob().catch(error => {
+      console.error('AdMob initialization error:', error);
+    });
+
+    // Add listener for reward interstitial ad events
+    const rewardListener = AdMob.addListener(
+      RewardInterstitialAdPluginEvents.Rewarded,
+      (rewardItem: any) => {
+        console.log('User earned reward from interstitial:', rewardItem);
+      }
+    );
+
+    // Cleanup listener on unmount
+    return () => {
+      rewardListener.remove();
+    };
+  }, []);
+
+  // Check for app updates and setup notifications on startup
+  useEffect(() => {
+    const initializeAppServices = async () => {
+      try {
+        // Check for updates
+        const updateCheck = checkForUpdate();
+        if (updateCheck.needsUpdate) {
+          setUpdateInfo({
+            isForceUpdate: updateCheck.isForceUpdate,
+            latestVersion: updateCheck.latestVersion,
+            currentVersion: '0.0.1', // Match CURRENT_APP_VERSION from updateService
+          });
+          setShowUpdateModal(true);
+        }
+
+        // Setup daily notifications
+        await setupAllNotifications();
+        console.log('Daily notifications scheduled');
+      } catch (error) {
+        console.error('Error initializing app services:', error);
+      }
+    };
+
+    initializeAppServices();
+  }, []);
+
+  // Show interstitial ad when changing screens (except quiz)
+  useEffect(() => {
+    if (previousView !== currentView && currentView !== 'quiz' && previousView !== 'quiz') {
+      // If suppression flag is set (e.g., AI generation), skip one navigation-triggered interstitial
+      if (suppressNextInterstitial) {
+        console.log('[AdMob] Suppressing navigation-triggered interstitial (AI generation)');
+        suppressNextInterstitial = false;
+      } else if (pendingRewardInterstitial) {
+        // Skip navigation-triggered interstitial if a reward interstitial is pending/shown
+        console.log('[AdMob] Skipping navigation interstitial (reward interstitial pending)');
+      } else {
+        console.log(`[AdMob] Navigation triggered: ${previousView} → ${currentView}. Attempting interstitial...`);
+        // Show interstitial ad with cooldown
+        showInterstitialAd().catch(error => {
+          console.error('Error showing interstitial ad:', error);
+        });
+      }
+    }
+    setPreviousView(currentView);
+  }, [currentView]);
+
+  // Show interstitial ad when returning to home/dashboard
+  useEffect(() => {
+    if (currentView === 'dashboard' && previousView !== 'dashboard' && previousView !== '') {
+      if (suppressNextInterstitial) {
+        console.log('[AdMob] Suppressing dashboard-return interstitial (AI generation)');
+        suppressNextInterstitial = false;
+      } else if (pendingRewardInterstitial) {
+        // Skip navigation-triggered interstitial if a reward interstitial is pending/shown
+        console.log('[AdMob] Skipping dashboard-return interstitial (reward interstitial pending)');
+      } else {
+        console.log(`[AdMob] Returning to dashboard from ${previousView}. Attempting interstitial...`);
+        showInterstitialAd().catch(error => {
+          console.error('Error showing interstitial ad on home return:', error);
+        });
+      }
+    }
+  }, [currentView, previousView]);
+
   useEffect(() => {
     localStorage.setItem('userName', userName);
   }, [userName]);
@@ -237,6 +444,19 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
+  const handleUpdateClick = async () => {
+    try {
+      await openPlayStoreUpdate();
+      setShowUpdateModal(false);
+    } catch (error) {
+      console.error('Failed to open Play Store:', error);
+    }
+  };
+
+  const handleSkipUpdate = () => {
+    setShowUpdateModal(false);
+  };
+
   const handleToggleLearned = (word: string) => {
     const isAlreadyLearned = learnedWords.has(word);
     
@@ -250,6 +470,20 @@ const App: React.FC = () => {
       setLearnedWords(prev => {
         const next = new Set(prev);
         next.add(word);
+        
+        // Show reward interstitial when 15 words marked as learned
+        if (next.size % 15 === 0) {
+          suppressNextInterstitial = true;
+          console.log('[AdMob] Triggering reward for 15 learned words milestone');
+          (async () => {
+            try {
+              await showRewardInterstitial();
+            } catch (e) {
+              // ignore ad failures
+            }
+          })();
+        }
+        
         return next;
       });
       updateDailyProgress('words');
@@ -329,6 +563,19 @@ const App: React.FC = () => {
     if (newBadges.length > 0) {
       setEarnedBadges(prev => [...prev, ...newBadges]);
     }
+  };
+
+  const handleDailyGoalCompleted = () => {
+    // Show reward interstitial when daily goal is completed
+    suppressNextInterstitial = true;
+    console.log('[AdMob] Triggering reward for daily goal completion');
+    (async () => {
+      try {
+        await showRewardInterstitial();
+      } catch (e) {
+        // ignore ad failures
+      }
+    })();
   };
 
   const handleSelectCategory = (category: Category) => {
@@ -412,9 +659,20 @@ const App: React.FC = () => {
           textColor: 'text-white'
       };
       
+      // Suppress the navigation-triggered interstitial once because we'll show a reward interstitial instead
+      suppressNextInterstitial = true;
       setSelectedCategory(tempCategory);
       setCurrentView('category');
       setActiveTab('home');
+
+      // Show reward interstitial when AI generates words
+      (async () => {
+        try {
+          await showRewardInterstitial();
+        } catch (e) {
+          // ignore ad failures
+        }
+      })();
 
     } catch (error) {
       setGenerationError("Failed to generate words. Please try again.");
@@ -436,6 +694,22 @@ const App: React.FC = () => {
       } else if (currentView === 'category' || currentView === 'leaderboard' || currentView === 'ai_create' || currentView === 'podcast') {
           setCurrentView('dashboard');
           setActiveTab('home');
+      }
+      // After handling the back navigation, attempt an interstitial
+      // but respect suppression flags and pending reward interstitials
+      try {
+        if (suppressNextInterstitial) {
+          console.log('[AdMob] Suppressing back-button interstitial');
+          suppressNextInterstitial = false;
+        } else if (pendingRewardInterstitial) {
+          console.log('[AdMob] Skipping back-button interstitial (reward pending)');
+        } else {
+          showInterstitialAd().catch(error => {
+            console.error('Error showing interstitial after back navigation:', error);
+          });
+        }
+      } catch (e) {
+        console.error('Back navigation interstitial check failed:', e);
       }
   };
 
@@ -502,6 +776,17 @@ const App: React.FC = () => {
         onLogin={handleLogin} 
       />
 
+      {updateInfo && (
+        <UpdateModal 
+          isOpen={showUpdateModal}
+          isForceUpdate={updateInfo.isForceUpdate}
+          latestVersion={updateInfo.latestVersion}
+          currentVersion={updateInfo.currentVersion}
+          onUpdate={handleUpdateClick}
+          onSkip={updateInfo.isForceUpdate ? undefined : handleSkipUpdate}
+        />
+      )}
+
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
@@ -527,11 +812,19 @@ const App: React.FC = () => {
             setCurrentView('dashboard');
             setActiveTab('home');
             setIsSidebarOpen(false);
+          // Trigger interstitial only for explicit navigation button press
+          showInterstitialAd().catch(error => {
+            console.error('Error showing interstitial after dashboard navigation:', error);
+          });
         }}
         onShowLeaderboard={() => {
             setCurrentView('leaderboard');
             setActiveTab('home');
             setIsSidebarOpen(false);
+          // Trigger interstitial only for explicit navigation button press
+          showInterstitialAd().catch(error => {
+            console.error('Error showing interstitial after leaderboard navigation:', error);
+          });
         }}
         userQuizScore={userPoints}
         isLoggedIn={isLoggedIn}
@@ -581,6 +874,7 @@ const App: React.FC = () => {
                 userPoints={userPoints}
                 selectedDifficulty={selectedDifficulty}
                 onSelectDifficulty={setSelectedDifficulty}
+                onGoalComplete={handleDailyGoalCompleted}
             />
             )}
 

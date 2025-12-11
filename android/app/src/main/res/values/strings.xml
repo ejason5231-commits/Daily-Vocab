@@ -9,6 +9,7 @@
     <string name="facebook_client_token">bd15528a4d8dc665cfb457284e156b50</string>
     <string name="admob_app_id">ca-app-pub-3055032812859066~9637921138</string>
     <string name="rewarded_interstitial_ad_unit_id">ca-app-pub-3055032812859066/1105110403</string>
+    <string name="native_ad_unit_id">ca-app-pub-3055032812859066/6800104806</string>
     <string name="interstitial_ad_unit_id">ca-app-pub-3055032812859066/5534475851</string>
     <string name="default_web_client_id">209806154102-6mtrhp5dk4rtrvn9fru5dhvoq0t92koq.apps.googleusercontent.com</string>
 </resources>

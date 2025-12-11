@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { VocabularyWord } from '../types';
 import { SpeakerIcon, CheckCircleIcon, CheckCircleIconSolid, SpinnerIcon, MicrophoneIcon, StopIcon, PlayIcon } from './icons';
 import { playAudio } from '../services/audioService';
+import { loadNativeAd } from '../App';
 import microphoneService from '../services/microphoneService';
 
 interface FlashcardProps {
@@ -10,15 +11,35 @@ interface FlashcardProps {
   isLearned: boolean;
   onToggleLearned: (word: string) => void;
   microphoneEnabled: boolean;
+  cardIndex?: number;
 }
 
-const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLearned, microphoneEnabled }) => {
+const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLearned, microphoneEnabled, cardIndex = 0 }) => {
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [userAudioURL, setUserAudioURL] = useState<string | null>(null);
   const [supportedMimeType, setSupportedMimeType] = useState<string>('');
+
+  useEffect(() => {
+    // Load native ad at relevant intervals (every 3 cards)
+    if (cardIndex > 0 && cardIndex % 3 === 0) {
+      (async () => {
+        try {
+          const adResponse = await loadNativeAd();
+          console.log('Flashcard native ad response:', adResponse);
+          // If the plugin returns ad assets, store them for rendering
+          if (adResponse && typeof adResponse === 'object') {
+            // Common native ad fields may include: headline, body, callToAction, images
+            setNativeAd(adResponse);
+          }
+        } catch (e) {
+          console.error('Error loading native ad in Flashcard:', e);
+        }
+      })();
+    }
+  }, [cardIndex]);
 
   useEffect(() => {
     // Determine a supported MIME type once on component mount.
@@ -48,6 +69,8 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
   }, [userAudioURL]);
 
   const wordText = wordData.word.split('(')[0].trim();
+
+  const [nativeAd, setNativeAd] = useState<any | null>(null);
 
   const handlePlaySound = async (e: React.MouseEvent, textToSpeak: string) => {
     e.stopPropagation();
@@ -192,6 +215,23 @@ const Flashcard: React.FC<FlashcardProps> = ({ wordData, isLearned, onToggleLear
           </div>
         </div>
       </div>
+      {/* Render native ad if available (debugging/preview) */}
+      {nativeAd && (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 mt-2 rounded-b">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">{nativeAd.headline || nativeAd.title || 'Sponsored'}</div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">{nativeAd.body || nativeAd.description || ''}</div>
+              {nativeAd.callToAction && (
+                <button className="mt-2 px-3 py-1 text-xs bg-primary-600 text-white rounded">{nativeAd.callToAction}</button>
+              )}
+            </div>
+            {nativeAd.images && nativeAd.images.length > 0 && (
+              <img src={nativeAd.images[0]} alt="ad" className="w-20 h-20 object-cover rounded" />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
