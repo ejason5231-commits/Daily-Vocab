@@ -13,6 +13,7 @@ import BadgeNotification from './components/BadgeNotification';
 import LevelUpNotification from './components/LevelUpNotification';
 import BottomNavigation from './components/BottomNavigation';
 import LoginModal from './components/LoginModal'; 
+import TipsModal from './components/TipsModal';
 import { Category, VocabularyWord, DailyGoal, DailyProgress, Badge } from './types';
 import { CATEGORIES, VOCABULARY_DATA } from './constants';
 import { getVocabularyForCategory } from './services/geminiService';
@@ -36,6 +37,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isQuizActive, setIsQuizActive] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false); 
+  const [showTipsModal, setShowTipsModal] = useState(true);
 
   // Settings & User State
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -500,6 +502,12 @@ const App: React.FC = () => {
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
         onLogin={handleLogin} 
+      />
+
+      <TipsModal 
+        isOpen={showTipsModal} 
+        onClose={() => setShowTipsModal(false)} 
+        onNavigate={handleTabChange}
       />
 
       <Sidebar 
